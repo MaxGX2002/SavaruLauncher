@@ -15,6 +15,8 @@ const FEED_URL = process.env.SAVARU_FEED || CONFIG.feedUrl;
 const CLIENT_ID = process.env.SAVARU_MSA_CLIENT_ID || CONFIG.msaClientId;
 // Dev runs only (npx electron .): a packaged build always requires a Microsoft sign-in.
 const DEV_OFFLINE = !app.isPackaged && process.env.SAVARU_DEV_OFFLINE;
+// The official launcher's folder (launcher_profiles.json, versions/). SAVARU_MC_DIR points tests elsewhere.
+const MC_DIR = process.env.SAVARU_MC_DIR || path.join(app.getPath('appData'), '.minecraft');
 const F = {
   settings: path.join(BASE, 'settings.json'),
   account: path.join(BASE, 'account.dat'),
@@ -32,7 +34,8 @@ const send = (ch, d) => win && !win.isDestroyed() && win.webContents.send(ch, d)
 
 const totalMemMb = Math.floor(os.totalmem() / 1048576);
 function settings() {
-  const def = { memoryMb: totalMemMb >= 15000 ? 8192 : totalMemMb >= 11000 ? 6144 : 4096, hideOnLaunch: true, uiSound: true };
+  // launcher: 'official' = hand off to the official Minecraft Launcher (default), 'direct' = our own Microsoft sign-in.
+  const def = { memoryMb: totalMemMb >= 15000 ? 8192 : totalMemMb >= 11000 ? 6144 : 4096, hideOnLaunch: true, uiSound: true, launcher: 'official' };
   return { ...def, ...readJson(F.settings, {}) };
 }
 
@@ -87,6 +90,17 @@ function view() {
   };
 }
 
+// The official Minecraft Launcher: the Microsoft Store / Xbox app package, or the older standalone install.
+// Returns a function that opens it; throws first when neither is installed.
+function officialLauncher() {
+  const pkg = 'Microsoft.4297127D64EC6_8wekyb3d8bbwe';
+  const exe = path.join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'Minecraft Launcher', 'MinecraftLauncher.exe');
+  const run = (cmd, args) => () => spawn(cmd, args, { detached: true, stdio: 'ignore' }).unref();
+  if (fs.existsSync(path.join(process.env.LOCALAPPDATA || '', 'Packages', pkg))) return run('explorer.exe', [`shell:AppsFolder\\${pkg}!Minecraft`]);
+  if (fs.existsSync(exe)) return run(exe, []);
+  throw new Error('no_official_launcher');
+}
+
 async function exclusive(fn) {
   if (busy) throw new Error('busy');
   busy = true;
@@ -105,6 +119,14 @@ const handlers = {
   install: ({ repair } = {}) => exclusive(async () => { await ensureInstalled(repair); return view(); }),
   play: ({ connect } = {}) => exclusive(async () => {
     if (gameProc) throw new Error('already_running');
+    // Official mode: install, then hand off to the official launcher, which does its own sign-in.
+    if (!DEV_OFFLINE && settings().launcher !== 'direct') {
+      const launch = officialLauncher();
+      await ensureInstalled(false);
+      await game.officialProfile(BASE, feed, MC_DIR, { memoryMb: settings().memoryMb, icon: 'data:image/png;base64,' + fs.readFileSync(path.join(__dirname, 'img', 'profile-icon.png')).toString('base64') });
+      launch();
+      return { ...view(), official: true };
+    }
     const acc = await session();
     await ensureInstalled(false);
     send('progress', { phase: 'launch' });
@@ -136,7 +158,7 @@ const handlers = {
   logout: () => { saveAccount(null); return view(); },
   settings: s => {
     const cur = settings();
-    const next = { memoryMb: Math.max(2048, Math.min(Number(s.memoryMb) || cur.memoryMb, totalMemMb - 1024)), hideOnLaunch: s.hideOnLaunch ?? cur.hideOnLaunch, uiSound: s.uiSound ?? cur.uiSound };
+    const next = { memoryMb: Math.max(2048, Math.min(Number(s.memoryMb) || cur.memoryMb, totalMemMb - 1024)), hideOnLaunch: s.hideOnLaunch ?? cur.hideOnLaunch, uiSound: s.uiSound ?? cur.uiSound, launcher: ['official', 'direct'].includes(s.launcher) ? s.launcher : cur.launcher };
     writeJson(F.settings, next);
     return view();
   },

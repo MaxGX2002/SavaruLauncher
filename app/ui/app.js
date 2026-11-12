@@ -29,6 +29,7 @@ const ERR = {
   busy: '正在處理其他工作，請稍候。',
   already_running: '遊戲已經在執行中。',
   no_feed: '無法取得模組包資訊，請檢查網路連線後再試一次。',
+  no_official_launcher: '找不到官方 Minecraft 啟動器，請先安裝。',
   comment_empty: '請填寫名稱和留言。',
   comment_failed: '留言送出失敗，請稍後再試。',
   comments_off: '留言板還沒開放。',
@@ -95,6 +96,7 @@ function render(v) {
   $('#mem-out').textContent = gb(mem.value);
   $('#mem-hint').textContent = `建議 8 GB 以上（這台電腦共 ${gb(v.totalMemMb)}）。分配太多反而可能變慢。`;
   $('#hide-on-launch').checked = v.settings.hideOnLaunch;
+  $$('input[name="launcher"]').forEach(r => { r.checked = r.value === v.settings.launcher; });
   $('#ui-sound').checked = v.settings.uiSound;
   if (v.account && !$('#c-name').value) $('#c-name').value = v.account.name;
 
@@ -353,11 +355,22 @@ async function start(connect) {
   if (phase || running) return;
   $('#reel').pause();
   try {
-    render(await api.call('play', { connect }));
+    const v = await api.call('play', { connect });
+    render(v);
     phase = null;
+    if (v.official) {
+      sfx('ok');
+      setStatus('已開啟官方 Minecraft 啟動器', '在官方啟動器登入，選「Savaru IV - Kohtalon Mies」後按「遊玩」' + (connect ? '，進遊戲後到「多人遊戲」選 SAVARU' : ''));
+      setBar(100, 'full');
+      setButtons();
+    }
   } catch (e) {
     phase = null;
     if (e.message === 'login_required') { pendingConnect = connect; idleStatus(); setButtons(); return openLogin(); }
+    if (e.message === 'no_official_launcher') {
+      failed(e);
+      return setStatus(errText(e), '', { error: true, action: { label: '下載', run: () => api.call('link', 'https://www.minecraft.net/download') } });
+    }
     failed(e);
   }
 }
@@ -445,6 +458,7 @@ $('#logout').addEventListener('click', async () => { render(await api.call('logo
 $('#mem').addEventListener('input', e => { $('#mem-out').textContent = gb(e.target.value); });
 $('#mem').addEventListener('change', async e => render(await api.call('settings', { memoryMb: Number(e.target.value) })));
 $('#hide-on-launch').addEventListener('change', async e => render(await api.call('settings', { hideOnLaunch: e.target.checked })));
+$$('input[name="launcher"]').forEach(r => r.addEventListener('change', async e => render(await api.call('settings', { launcher: e.target.value }))));
 $('#ui-sound').addEventListener('change', async e => render(await api.call('settings', { uiSound: e.target.checked })));
 $$('[data-open]').forEach(b => b.addEventListener('click', () => api.call('open', b.dataset.open)));
 $$('[data-win]').forEach(b => b.addEventListener('click', () => api.call('win', b.dataset.win)));

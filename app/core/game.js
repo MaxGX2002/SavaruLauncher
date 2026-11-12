@@ -202,6 +202,22 @@ async function writeServers(gameDir, server) {
   await fsp.writeFile(file, Buffer.concat([head, str('name', server.name || 'Savaru'), str('ip', server.address), Buffer.from([0, 0])]));
 }
 
+// Hands the installed pack to the official Minecraft Launcher, which signs in and checks ownership itself:
+// copies the Fabric version JSON into <mcDir>/versions (the launcher fetches vanilla + libraries from it) and
+// adds or refreshes a "Savaru IV" installation that runs our game dir. Other installations are left alone.
+async function officialProfile(base, feed, mcDir, { memoryMb = 8192, icon } = {}) {
+  const L = layout(base), fid = fabricId(feed);
+  const dst = path.join(mcDir, 'versions', fid, fid + '.json');
+  await fsp.mkdir(path.dirname(dst), { recursive: true });
+  await fsp.copyFile(path.join(L.versions, fid, fid + '.json'), dst);
+  const file = path.join(mcDir, 'launcher_profiles.json');
+  const j = fs.existsSync(file) ? JSON.parse(await fsp.readFile(file, 'utf8')) : { profiles: {}, settings: {}, version: 3 };
+  const now = new Date().toISOString(), old = j.profiles?.['savaru-iv'] || {};
+  j.profiles = { ...j.profiles, 'savaru-iv': { ...old, name: 'Savaru IV - Kohtalon Mies', type: 'custom', icon, lastVersionId: fid, gameDir: L.game, javaArgs: `-Xmx${memoryMb}M`, created: old.created || now, lastUsed: now } };
+  await fsp.writeFile(file + '.tmp', JSON.stringify(j, null, 2));
+  await fsp.rename(file + '.tmp', file);
+}
+
 function isInstalled(base, feed) {
   const L = layout(base);
   const s = readState(L);
@@ -249,4 +265,4 @@ function launchCommand(base, feed, account, { memoryMb = 8192, server, msaClient
   return { java: path.join(L.runtime, component, 'bin', 'javaw.exe'), args, cwd: L.game };
 }
 
-module.exports = { layout, install, isInstalled, launchCommand, offlineUuid, writeServers };
+module.exports = { layout, install, isInstalled, launchCommand, offlineUuid, writeServers, officialProfile };
