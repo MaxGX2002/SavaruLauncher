@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-const CALLS = ['init', 'refresh', 'install', 'play', 'login', 'login-cancel', 'logout', 'settings', 'ping', 'open', 'link', 'copy', 'win'];
+const CALLS = ['init', 'refresh', 'install', 'play', 'login', 'login-cancel', 'logout', 'settings', 'ping', 'open', 'link', 'copy', 'win', 'comments', 'comment'];
 const EVENTS = ['progress', 'game', 'login-code'];
 
 contextBridge.exposeInMainWorld('savaru', {

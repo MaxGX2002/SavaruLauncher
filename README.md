@@ -3,7 +3,7 @@
 Electron 啟動器：下載並安裝 Savaru IV 模組包（Java、Minecraft 1.21.1、Fabric、模組、設定檔）、檢查更新、
 啟動遊戲，以及一鍵連線 SAVARU 伺服器。
 
-**玩家下載：** 到 [Releases](https://github.com/MaxGX2002/SavaruLauncher/releases/latest) 下載 `SavaruLauncher-<版本>-win64.zip`，
+**玩家下載：** 到 [Releases](https://github.com/MaxGX2002/SavaruLauncher/releases/latest) （或 [Google 雲端硬碟](https://drive.google.com/drive/folders/1Un56ypTeW6AAHxbRl9N9nYQxPtudrF1e?usp=sharing)）下載 `SavaruLauncher-<版本>-win64.zip`，
 解壓縮後執行 `SavaruLauncher.exe`。需要擁有 Minecraft Java 版的 Microsoft 帳號。
 
 ## 運作方式

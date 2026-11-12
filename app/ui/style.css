@@ -79,6 +79,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ember); out
 .nav button:nth-child(3) { animation-delay: 0.67s; }
 .nav button:nth-child(4) { animation-delay: 0.74s; }
 .nav button:nth-child(5) { animation-delay: 0.81s; }
+.nav button:nth-child(6) { animation-delay: 0.88s; }
 .nav button:hover { color: var(--ink); padding-left: 33px; }
 .nav button[aria-current="page"] { color: #fff; padding-left: 28px; }
 .nav em { font: 600 11.5px var(--font); font-style: normal; color: var(--ink-3); font-variant-numeric: tabular-nums; transition: color 0.3s ease; }
@@ -123,6 +124,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ember); out
   transition: opacity 1.6s ease, transform 16s linear;
 }
 .bg-img.on { opacity: 1; transform: scale(1); }
+video.bg-img { width: 100%; height: 100%; object-fit: cover; }
 .bg-shade {
   position: absolute; inset: 0;
   background:
@@ -153,12 +155,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ember); out
 /* home: nothing but the art */
 .home { display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; padding: 14px 24px 16px; }
 
-/* slide bars: the open one fills over the 9 s it stays up */
+/* slide bars: the open one fills over the time it stays up (--dur: 9 s, 30 s for the video) */
 .slides { display: flex; gap: 6px; animation: fade 1s ease 1.2s both; }
 .slides button { position: relative; width: 26px; height: 3px; padding: 0; border: 0; border-radius: 0; background: rgba(241, 235, 224, 0.28); overflow: hidden; transition: width 0.4s var(--ease); }
 .slides button:hover { background: rgba(241, 235, 224, 0.55); }
 .slides button[aria-current="true"] { width: 44px; }
-.slides button[aria-current="true"]::after { content: ""; position: absolute; inset: 0; background: var(--on-dark); transform-origin: left; animation: fill 9s linear both; }
+.slides button[aria-current="true"]::after { content: ""; position: absolute; inset: 0; background: var(--on-dark); transform-origin: left; animation: fill var(--dur, 9s) linear both; }
 @keyframes fill { from { transform: scaleX(0); } }
 
 /* gallery / notes / settings: a solid panel over the art */
@@ -219,6 +221,42 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ember); out
 .nav-arrow.next:hover { transform: translateX(3px); }
 .viewer-close { position: absolute; top: 8px; right: 12px; width: 40px; height: 40px; border: 0; border-radius: 4px; background: none; font-size: 17px; transition: background 0.2s ease, transform 0.3s var(--ease); }
 .viewer-close:hover { background: var(--crimson-hi); transform: rotate(90deg); }
+
+/* community: four flat link tiles, then the comment wall */
+.community { max-width: 860px; }
+.links { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+.link-card {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px 16px 13px;
+  border: 0; border-radius: 4px; background: rgba(255, 255, 255, 0.07); text-align: left; overflow: hidden;
+  animation: rise 0.55s var(--ease) both; transition: background 0.25s ease, transform 0.3s var(--ease);
+}
+.link-card:nth-child(2) { animation-delay: 0.05s; }
+.link-card:nth-child(3) { animation-delay: 0.1s; }
+.link-card:nth-child(4) { animation-delay: 0.15s; }
+.link-card b { font-size: 15px; }
+.link-card span { font-size: 12px; color: var(--on-dark-3); transition: color 0.25s ease; }
+.link-card::after { content: "↗"; position: absolute; top: 10px; right: 12px; color: var(--on-dark-3); transition: transform 0.3s var(--ease), color 0.25s ease; }
+.link-card:hover { background: var(--crimson); transform: translateY(-2px); }
+.link-card:hover span, .link-card:hover::after { color: #fff; }
+.link-card:hover::after { transform: translate(2px, -2px); }
+.community h3 { margin: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: var(--on-dark-3); }
+.comment-form { display: grid; grid-template-columns: 150px 1fr auto; gap: 8px; align-items: start; margin-bottom: 14px; animation: rise 0.55s var(--ease) 0.2s both; }
+.comment-form input, .comment-form textarea {
+  border: 0; border-radius: 4px; padding: 8px 10px; background: rgba(255, 255, 255, 0.08); color: var(--on-dark);
+  font: 13.5px/1.5 var(--font); resize: none; user-select: text;
+}
+.comment-form textarea { min-height: 38px; }
+.comment-form input:focus, .comment-form textarea:focus { outline: 2px solid var(--ember); outline-offset: 0; }
+.comment-form .small { height: 38px; padding: 0 20px; background: var(--crimson); color: #fff; font-weight: 700; }
+.comment-form .small:hover { background: var(--ember); }
+.comment-form .small:disabled { background: rgba(255, 255, 255, 0.08); color: var(--on-dark-3); cursor: default; }
+.comments { margin: 0; padding: 0; list-style: none; user-select: text; }
+.comments li { padding: 10px 0; border-top: 1px solid var(--line-dark); animation: rise 0.45s var(--ease) both; }
+.comments .c-head { display: flex; align-items: baseline; gap: 10px; margin: 0; }
+.comments .c-head b { color: var(--ember); font-size: 13.5px; }
+.comments time { font-size: 11.5px; color: var(--on-dark-3); font-variant-numeric: tabular-nums; }
+.comments .c-text { margin: 3px 0 0; font-size: 13.5px; color: #ddd4e0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.comments .empty { color: var(--on-dark-3); font-size: 13px; }
 
 .settings { max-width: 620px; }
 .settings section { padding: 14px 0; border-bottom: 1px solid var(--line-dark); animation: rise 0.55s var(--ease) both; }

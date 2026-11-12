@@ -7,15 +7,16 @@ const num = n => Number(n).toLocaleString('zh-TW');
 const mb = b => `${num(Math.round(b / 1048576))} MB`;
 const gb = m => `${(m / 1024).toFixed(1)} GB`;
 
-// The pack's own art (FancyMenu title-screen backgrounds); pos keeps each picture's subject in frame.
+// The pack's cover art, a 30 s loop of v3.0 combat (media/reel-loop.mp4), then combat frames from the dungeon reels.
+// pos keeps each picture's subject in frame. Reduced motion skips the video.
 const ART = [
   { src: 'ruins.jpg', pos: '28% 50%' },
-  { src: 'golden-valley.jpg', pos: '50% 62%' },
-  { src: 'mages.jpg', pos: '30% 50%' },
-  { src: 'night-siege-a.jpg', pos: '50% 50%' },
-  { src: 'tapestry.jpg', pos: '50% 50%' },
-  { src: 'night-siege-b.jpg', pos: '46% 50%' },
-];
+  { video: true },
+  { src: 'combat-1.jpg', pos: '50% 50%' },
+  { src: 'combat-2.jpg', pos: '50% 50%' },
+  { src: 'combat-3.jpg', pos: '45% 50%' },
+  { src: 'combat-4.jpg', pos: '50% 50%' },
+].filter(a => !a.video || !matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 const ERR = {
   login_not_configured: '這個版本的啟動器還沒有設定 Microsoft 登入。',
@@ -28,6 +29,9 @@ const ERR = {
   busy: '正在處理其他工作，請稍候。',
   already_running: '遊戲已經在執行中。',
   no_feed: '無法取得模組包資訊，請檢查網路連線後再試一次。',
+  comment_empty: '請填寫名稱和留言。',
+  comment_failed: '留言送出失敗，請稍後再試。',
+  comments_off: '留言板還沒開放。',
 };
 const errText = e => { const m = e?.message || String(e); return ERR[m] || '發生錯誤：' + m; };
 
@@ -92,6 +96,7 @@ function render(v) {
   $('#mem-hint').textContent = `建議 8 GB 以上（這台電腦共 ${gb(v.totalMemMb)}）。分配太多反而可能變慢。`;
   $('#hide-on-launch').checked = v.settings.hideOnLaunch;
   $('#ui-sound').checked = v.settings.uiSound;
+  if (v.account && !$('#c-name').value) $('#c-name').value = v.account.name;
 
   const up = v.launcherUpdate;
   $('#launcher-update').hidden = !up;
@@ -144,9 +149,40 @@ function go(view) {
   const cur = $(`.nav button[data-view="${view}"]`), mark = $('.nav-mark');
   mark.style.height = cur.offsetHeight + 'px';
   mark.style.transform = `translateY(${cur.offsetTop}px)`;
-  for (const id of ['home', 'gallery', 'notes', 'settings']) $('#view-' + id).hidden = id !== view;
+  for (const id of ['home', 'gallery', 'community', 'notes', 'settings']) $('#view-' + id).hidden = id !== view;
   if (view !== 'gallery') $('#reel').pause();
+  clearInterval(commentTimer);
+  if (view === 'community') { loadComments(); commentTimer = setInterval(() => { if (!document.hidden) loadComments(); }, 20000); }
 }
+
+/* ---------- community: links + a comment wall backed by a Google Form and its response sheet (feed.launcher.comments) ---------- */
+let commentTimer, lastPost = 0;
+async function loadComments() {
+  const list = await api.call('comments').catch(() => undefined);
+  const box = $('#comments');
+  $('#comment-form').hidden = list === null;
+  if (list === null) return void (box.innerHTML = '<li class="empty">留言板即將開放。</li>');
+  if (!list) return void (box.dataset.loaded || (box.innerHTML = '<li class="empty">無法讀取留言，請檢查網路連線。</li>'));
+  box.dataset.loaded = 1;
+  box.innerHTML = list.length
+    ? list.map(c => `<li><p class="c-head"><b>${esc(c.name)}</b><time>${esc(c.at)}</time></p><p class="c-text">${esc(c.text)}</p></li>`).join('')
+    : '<li class="empty">還沒有留言，來當第一個吧。</li>';
+}
+$('#comment-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (Date.now() - lastPost < 60000) return toast('每分鐘只能留言一次。', true);
+  const b = $('#comment-send');
+  b.disabled = true;
+  try {
+    await api.call('comment', { name: $('#c-name').value, text: $('#c-text').value });
+    lastPost = Date.now();
+    $('#c-text').value = '';
+    toast('留言已送出');
+    setTimeout(loadComments, 1500);
+  } catch (err) { toast(errText(err), true); }
+  b.disabled = false;
+});
+$$('[data-link]').forEach(b => b.addEventListener('click', () => api.call('link', b.dataset.link)));
 document.addEventListener('click', e => {
   const v = e.target.closest('[data-view]');
   if (v) go(v.dataset.view);
@@ -154,26 +190,36 @@ document.addEventListener('click', e => {
 
 /* ---------- background art ---------- */
 let slide = 0, front = 0, timer;
-const layers = $$('.bg-img');
+const layers = $$('div.bg-img'), bgReel = $('#bg-reel');
+const slideMs = a => (a.video ? 30000 : 9000);
 function show(i) {
   slide = (i + ART.length) % ART.length;
-  const a = ART[slide], el = layers[1 - front];
-  el.style.transition = 'none';
-  el.classList.remove('on');
-  el.style.backgroundImage = `url("../img/art/${a.src}")`;
-  el.style.backgroundPosition = a.pos;
-  void el.offsetWidth;
-  el.style.transition = '';
-  el.classList.add('on');
-  layers[front].classList.remove('on');
-  front = 1 - front;
+  const a = ART[slide];
+  if (a.video) {
+    bgReel.currentTime = 0;
+    bgReel.play().catch(() => {});
+    bgReel.classList.add('on');
+  } else {
+    const el = layers[1 - front];
+    el.style.transition = 'none';
+    el.classList.remove('on');
+    el.style.backgroundImage = `url("../img/art/${a.src}")`;
+    el.style.backgroundPosition = a.pos;
+    void el.offsetWidth;
+    el.style.transition = '';
+    el.classList.add('on');
+    front = 1 - front;
+    bgReel.classList.remove('on');
+    setTimeout(() => bgReel.classList.contains('on') || bgReel.pause(), 1700);
+  }
+  layers[a.video ? front : 1 - front].classList.remove('on');
   $$('#slides button').forEach((b, k) => b.setAttribute('aria-current', String(k === slide)));
   clearTimeout(timer);
-  timer = setTimeout(() => show(slide + 1), 9000);
+  timer = setTimeout(() => show(slide + 1), slideMs(a));
 }
 $('#slides').innerHTML = ART.map((a, i) => `<button type="button" aria-label="背景 ${i + 1}"></button>`).join('');
-$$('#slides button').forEach((b, i) => b.addEventListener('click', () => show(i)));
-ART.forEach(a => { new Image().src = `../img/art/${a.src}`; });
+$$('#slides button').forEach((b, i) => { b.style.setProperty('--dur', slideMs(ART[i]) + 'ms'); b.addEventListener('click', () => show(i)); });
+ART.forEach(a => { if (a.src) new Image().src = `../img/art/${a.src}`; });
 
 // The art drifts a few pixels against the mouse (.bg is oversized by 16 px so no edge shows).
 $('.main').addEventListener('mousemove', e => {
@@ -220,8 +266,9 @@ const embers = (() => {
 })();
 
 /* ---------- gameplay screenshots ---------- */
-// The user's own v3.0 play (Savaru IV - Kohtalon Mies/screenshots, 2026-11-05..09), no captions by request.
-const SHOTS = 16;
+// The user's own v3.0 play: 01-11 from Savaru IV - Kohtalon Mies/screenshots (2026-11-05..09),
+// 12-19 combat frames from the 11-01/11-05/11-09 reels. No captions by request.
+const SHOTS = 19;
 const shotSrc = i => `../img/shots/${String(i + 1).padStart(2, '0')}.jpg`;
 let shot = 0;
 function showShot(i) {

@@ -147,6 +147,27 @@ const handlers = {
     if (target) { fs.mkdirSync(target, { recursive: true }); return shell.openPath(target); }
   },
   link: url => { if (/^https:\/\//.test(url)) return shell.openExternal(url); },
+  // Comment wall: posts go to a one-question Google Form as "【name】text"; reads come from its response
+  // sheet's gviz JSON (columns A = timestamp, B = answer, newest first). null = not configured in the feed yet.
+  // ponytail: no server-side moderation, the owner deletes rows in the sheet.
+  comments: async () => {
+    const c = feed?.launcher?.comments;
+    if (!c) return null;
+    const t = await (await fetch(c.read)).text();
+    return JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)).table.rows.map(r => {
+      const s = String(r.c[1]?.v ?? ''), m = s.match(/^【([^】]{1,16})】([\s\S]*)$/);
+      return { at: r.c[0]?.f ?? '', name: m ? m[1] : '玩家', text: (m ? m[2] : s).trim() };
+    }).filter(r => r.text);
+  },
+  comment: async ({ name, text } = {}) => {
+    const c = feed?.launcher?.comments;
+    if (!c) throw new Error('comments_off');
+    name = String(name ?? '').replace(/[【】\s]+/g, ' ').trim().slice(0, 16);
+    text = String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    if (!name || !text) throw new Error('comment_empty');
+    const r = await fetch(c.post, { method: 'POST', body: new URLSearchParams({ [c.entry]: `【${name}】${text}` }) }).catch(() => null);
+    if (!r?.ok) throw new Error('comment_failed');
+  },
   copy: text => clipboard.writeText(String(text)),
   win: action => { if (action === 'min') win.minimize(); else if (action === 'close') win.close(); },
 };

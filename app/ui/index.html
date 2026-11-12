@@ -20,6 +20,7 @@
     <span class="nav-mark" aria-hidden="true"></span>
     <button type="button" data-view="home" aria-current="page"><span>首頁</span></button>
     <button type="button" data-view="gallery"><span>遊戲畫面</span></button>
+    <button type="button" data-view="community"><span>社群</span></button>
     <button type="button" data-view="notes"><span>更新日誌</span><em id="nav-version"></em></button>
     <button type="button" data-view="settings"><span>設定</span></button>
   </nav>
@@ -39,7 +40,7 @@
 </aside>
 
 <div class="main">
-  <div class="bg" aria-hidden="true"><div class="bg-img"></div><div class="bg-img"></div><div class="bg-shade"></div><canvas id="embers"></canvas></div>
+  <div class="bg" aria-hidden="true"><div class="bg-img"></div><div class="bg-img"></div><video class="bg-img" id="bg-reel" muted playsinline preload="auto" src="../media/reel-loop.mp4"></video><div class="bg-shade"></div><canvas id="embers"></canvas></div>
 
   <header class="titlebar">
     <div class="tb-fill"></div>
@@ -62,6 +63,25 @@
       <video id="reel" controls preload="none" poster="../media/highlight.jpg" src="../media/highlight.mp4"></video>
       <p class="reel-cap">實機精華影片・3 分鐘</p>
       <div class="shots" id="shots"></div>
+    </div>
+  </section>
+
+  <section class="view sheet" id="view-community" hidden>
+    <h2>社群</h2>
+    <div class="sheet-body community">
+      <div class="links">
+        <button type="button" class="link-card" data-link="https://discord.gg/frQnpEaeuv"><b>官方論壇</b><span>Discord</span></button>
+        <button type="button" class="link-card" data-link="https://www.curseforge.com/minecraft/modpacks/savaru-iv-kohtalon-mies"><b>CurseForge</b><span>模組包頁面</span></button>
+        <button type="button" class="link-card" data-link="https://docs.google.com/document/d/1kDIe_N-GSflMmY8PkAwJJxg2RFzZhaXnldV_x2uOz9o/edit?usp=sharing"><b>官方設定集</b><span>世界觀與設定</span></button>
+        <button type="button" class="link-card" data-link="https://forms.gle/woosFJuVwbA4FJZy7"><b>意見回饋</b><span>回報問題、提出建議</span></button>
+      </div>
+      <h3>留言板</h3>
+      <form class="comment-form" id="comment-form" hidden>
+        <input id="c-name" maxlength="16" placeholder="名稱" aria-label="名稱" required>
+        <textarea id="c-text" maxlength="300" rows="2" placeholder="想說點什麼？" aria-label="留言" required></textarea>
+        <button type="submit" class="small solid" id="comment-send">送出</button>
+      </form>
+      <ul class="comments" id="comments"></ul>
     </div>
   </section>
 
