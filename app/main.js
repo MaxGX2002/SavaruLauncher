@@ -32,7 +32,7 @@ const send = (ch, d) => win && !win.isDestroyed() && win.webContents.send(ch, d)
 
 const totalMemMb = Math.floor(os.totalmem() / 1048576);
 function settings() {
-  const def = { memoryMb: totalMemMb >= 15000 ? 8192 : totalMemMb >= 11000 ? 6144 : 4096, hideOnLaunch: true };
+  const def = { memoryMb: totalMemMb >= 15000 ? 8192 : totalMemMb >= 11000 ? 6144 : 4096, hideOnLaunch: true, uiSound: true };
   return { ...def, ...readJson(F.settings, {}) };
 }
 
@@ -136,7 +136,7 @@ const handlers = {
   logout: () => { saveAccount(null); return view(); },
   settings: s => {
     const cur = settings();
-    const next = { memoryMb: Math.max(2048, Math.min(Number(s.memoryMb) || cur.memoryMb, totalMemMb - 1024)), hideOnLaunch: s.hideOnLaunch ?? cur.hideOnLaunch };
+    const next = { memoryMb: Math.max(2048, Math.min(Number(s.memoryMb) || cur.memoryMb, totalMemMb - 1024)), hideOnLaunch: s.hideOnLaunch ?? cur.hideOnLaunch, uiSound: s.uiSound ?? cur.uiSound };
     writeJson(F.settings, next);
     return view();
   },

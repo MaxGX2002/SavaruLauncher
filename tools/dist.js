@@ -23,14 +23,15 @@ fs.writeFileSync(ico, Buffer.concat([head, png]));
 
 (async () => {
   const [out] = await packager({
-    dir: root, out: path.join(root, 'dist'), overwrite: true, asar: true,
+    // DIST_OUT: build elsewhere while a player copy is still running from dist/ (its files are locked).
+    dir: root, out: process.env.DIST_OUT || path.join(root, 'dist'), overwrite: true, asar: true,
     platform: 'win32', arch: 'x64',
     name: pkg.productName, executableName: 'SavaruLauncher', appVersion: pkg.version, icon: ico,
     win32metadata: { CompanyName: 'Savaru', FileDescription: pkg.productName, ProductName: pkg.productName, InternalName: 'SavaruLauncher' },
     ignore: [/^\/(feed|tools|dist|build)(\/|$)/, /^\/\.git/],
     prune: true,
   });
-  const zip = path.join(root, 'dist', `SavaruLauncher-${pkg.version}-win64.zip`);
+  const zip = path.join(path.dirname(out), `SavaruLauncher-${pkg.version}-win64.zip`);
   fs.rmSync(zip, { force: true });
   // Windows' own bsdtar: Git's GNU tar on PATH reads "C:" as a remote host.
   execFileSync(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe'), ['-a', '-cf', zip, '-C', path.dirname(out), path.basename(out)]);

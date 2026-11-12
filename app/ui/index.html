@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; media-src 'self'; style-src 'self'; font-src 'self'; script-src 'self'">
 <title>Savaru IV Launcher</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -11,10 +11,15 @@
 <aside class="sidebar">
   <div class="drag-strip"></div>
   <img class="logo" src="../img/logo.png" alt="Savaru IV — Kohtalon Mies">
-  <p class="tagline">選擇職業、成長天賦、闖入地城，<br>和夥伴一起挑戰世界王。</p>
+  <div class="tagline">
+    <p>探索魯瓦多大陸中沒落的阿爾格爾帝國，<br>找尋這片土地中命運的蹤跡。</p>
+    <p>孤軍奮戰這個充滿死寂、危機四伏的世界，<br>或是和餘燼中的同伴一起探險。</p>
+  </div>
 
   <nav class="nav" aria-label="頁面">
+    <span class="nav-mark" aria-hidden="true"></span>
     <button type="button" data-view="home" aria-current="page"><span>首頁</span></button>
+    <button type="button" data-view="gallery"><span>遊戲畫面</span></button>
     <button type="button" data-view="notes"><span>更新日誌</span><em id="nav-version"></em></button>
     <button type="button" data-view="settings"><span>設定</span></button>
   </nav>
@@ -34,7 +39,7 @@
 </aside>
 
 <div class="main">
-  <div class="bg" aria-hidden="true"><div class="bg-img"></div><div class="bg-img"></div><div class="bg-shade"></div></div>
+  <div class="bg" aria-hidden="true"><div class="bg-img"></div><div class="bg-img"></div><div class="bg-shade"></div><canvas id="embers"></canvas></div>
 
   <header class="titlebar">
     <div class="tb-fill"></div>
@@ -48,12 +53,16 @@
   </div>
 
   <section class="view home" id="view-home">
-    <article class="latest">
-      <p class="lore">探索魯瓦多大陸中沒落的阿爾格爾帝國，<br>找尋這片土地中命運的蹤跡。</p>
-      <p class="lore">孤軍奮戰這個充滿死寂、危機四伏的世界，<br>或是和餘燼中的同伴一起探險。</p>
-      <button type="button" class="more" data-view="notes" id="latest-version">查看更新日誌</button>
-    </article>
     <div class="slides" id="slides" role="group" aria-label="切換背景圖"></div>
+  </section>
+
+  <section class="view sheet" id="view-gallery" hidden>
+    <h2>遊戲畫面</h2>
+    <div class="sheet-body gallery">
+      <video id="reel" controls preload="none" poster="../media/highlight.jpg" src="../media/highlight.mp4"></video>
+      <p class="reel-cap">實機精華影片・3 分鐘</p>
+      <div class="shots" id="shots"></div>
+    </div>
   </section>
 
   <section class="view sheet" id="view-notes" hidden>
@@ -72,6 +81,7 @@
       <section>
         <h3>啟動</h3>
         <label class="check"><input type="checkbox" id="hide-on-launch"><span>遊戲開始後隱藏啟動器</span></label>
+        <label class="check"><input type="checkbox" id="ui-sound"><span>介面音效</span></label>
       </section>
       <section>
         <h3>遊戲檔案</h3>
@@ -122,6 +132,14 @@
     <button type="button" class="link" id="login-cancel">取消</button>
   </div>
 </div>
+
+<dialog class="viewer" id="viewer" aria-label="遊戲畫面" autofocus>
+  <img id="viewer-img" alt="">
+  <p id="viewer-cap"></p>
+  <button type="button" class="nav-arrow prev" id="viewer-prev" aria-label="上一張">‹</button>
+  <button type="button" class="nav-arrow next" id="viewer-next" aria-label="下一張">›</button>
+  <button type="button" class="viewer-close" id="viewer-close" aria-label="關閉">✕</button>
+</dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="app.js"></script>

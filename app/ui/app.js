@@ -91,6 +91,7 @@ function render(v) {
   $('#mem-out').textContent = gb(mem.value);
   $('#mem-hint').textContent = `建議 8 GB 以上（這台電腦共 ${gb(v.totalMemMb)}）。分配太多反而可能變慢。`;
   $('#hide-on-launch').checked = v.settings.hideOnLaunch;
+  $('#ui-sound').checked = v.settings.uiSound;
 
   const up = v.launcherUpdate;
   $('#launcher-update').hidden = !up;
@@ -133,7 +134,6 @@ function renderNews(news) {
   $('#news').innerHTML = news.length
     ? news.map(n => `<div class="entry"><p class="date">${esc(n.date || '')}</p>${md(n.markdown || '')}</div>`).join('')
     : '<p>目前沒有更新日誌。</p>';
-  $('#latest-version').textContent = news.length ? `最新版本 ${news[0].title || V.feed.version}・查看更新日誌` : '查看更新日誌';
 }
 
 /* ---------- navigation ---------- */
@@ -141,7 +141,11 @@ function go(view) {
   for (const b of $$('.nav button')) {
     if (b.dataset.view === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   }
-  for (const id of ['home', 'notes', 'settings']) $('#view-' + id).hidden = id !== view;
+  const cur = $(`.nav button[data-view="${view}"]`), mark = $('.nav-mark');
+  mark.style.height = cur.offsetHeight + 'px';
+  mark.style.transform = `translateY(${cur.offsetTop}px)`;
+  for (const id of ['home', 'gallery', 'notes', 'settings']) $('#view-' + id).hidden = id !== view;
+  if (view !== 'gallery') $('#reel').pause();
 }
 document.addEventListener('click', e => {
   const v = e.target.closest('[data-view]');
@@ -171,9 +175,131 @@ $('#slides').innerHTML = ART.map((a, i) => `<button type="button" aria-label="�
 $$('#slides button').forEach((b, i) => b.addEventListener('click', () => show(i)));
 ART.forEach(a => { new Image().src = `../img/art/${a.src}`; });
 
+// The art drifts a few pixels against the mouse (.bg is oversized by 16 px so no edge shows).
+$('.main').addEventListener('mousemove', e => {
+  const r = e.currentTarget.getBoundingClientRect(), bg = $('.bg');
+  bg.style.setProperty('--px', ((e.clientX - r.left) / r.width - 0.5) * -14 + 'px');
+  bg.style.setProperty('--py', ((e.clientY - r.top) / r.height - 0.5) * -10 + 'px');
+});
+
+/* ---------- embers: flat pixel sparks drifting up over the art, and a burst from the play buttons ---------- */
+const embers = (() => {
+  const cv = $('#embers'), g = cv.getContext('2d');
+  const COLORS = ['#e8743b', '#f2a65a', '#b3322d', '#ffd27a'];
+  let parts = [], W = 0, H = 0, dpr = 1;
+  const fit = () => { dpr = devicePixelRatio || 1; W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; };
+  addEventListener('resize', fit); fit();
+  const add = (x, y, burst) => {
+    const a = burst ? Math.random() * Math.PI * 2 : -Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+    const v = burst ? 1.5 + Math.random() * 4.5 : 0.35 + Math.random() * 0.8;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, s: 3 + Math.floor(Math.random() * 4), t: 0,
+      life: burst ? 45 + Math.random() * 45 : 300 + Math.random() * 300, c: COLORS[Math.floor(Math.random() * 4)], w: Math.random() * 6.3, burst });
+  };
+  const frame = () => {
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    if (parts.length < 85 && Math.random() < 0.45) add(Math.random() * W, H + 8, false);
+    parts = parts.filter(p => p.t < p.life && p.y > -10);
+    for (const p of parts) {
+      p.t++;
+      if (p.burst) { p.vx *= 0.94; p.vy = p.vy * 0.94 - 0.04; }
+      p.x += p.vx + Math.sin(p.t / 40 + p.w) * 0.25; p.y += p.vy;
+      const k = p.t / p.life;
+      g.globalAlpha = Math.min(1, k * 8, (1 - k) * 2) * 0.9;
+      g.fillStyle = p.c;
+      g.save(); g.translate(p.x, p.y); g.rotate(Math.PI / 4 + p.t * 0.01); g.fillRect(-p.s / 2, -p.s / 2, p.s, p.s); g.restore();
+    }
+    requestAnimationFrame(frame);
+  };
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) requestAnimationFrame(frame);
+  return {
+    burst(el) {
+      const r = el.getBoundingClientRect(), c = cv.getBoundingClientRect();
+      for (let i = 0; i < 60; i++) add(r.left + r.width * (0.2 + Math.random() * 0.6) - c.left, r.top + r.height / 2 - c.top, true);
+    },
+  };
+})();
+
+/* ---------- gameplay screenshots ---------- */
+// The user's own v3.0 play (Savaru IV - Kohtalon Mies/screenshots, 2026-11-05..09), no captions by request.
+const SHOTS = 16;
+const shotSrc = i => `../img/shots/${String(i + 1).padStart(2, '0')}.jpg`;
+let shot = 0;
+function showShot(i) {
+  shot = (i + SHOTS) % SHOTS;
+  $('#viewer-img').src = shotSrc(shot);
+  $('#viewer-cap').textContent = `${shot + 1} / ${SHOTS}`;
+  $('#viewer-img').animate([{ opacity: 0, transform: 'scale(0.97)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+}
+$('#shots').innerHTML = Array.from({ length: SHOTS }, (_, i) => `<button type="button" class="shot" data-shot="${i}" aria-label="遊戲截圖 ${i + 1}"><img src="${shotSrc(i)}" alt="" loading="lazy" decoding="async"></button>`).join('');
+$$('.shot').forEach((b, i) => b.style.setProperty('--i', i));
+$('#shots').addEventListener('click', e => { const b = e.target.closest('.shot'); if (b) { showShot(+b.dataset.shot); $('#viewer').showModal(); } });
+$('#viewer-prev').addEventListener('click', () => showShot(shot - 1));
+$('#viewer-next').addEventListener('click', () => showShot(shot + 1));
+$('#viewer-close').addEventListener('click', () => $('#viewer').close());
+$('#viewer').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+$('#viewer').addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { sfx('click'); showShot(shot + (e.key === 'ArrowLeft' ? -1 : 1)); }
+});
+
+/* ---------- interface sounds: synthesized with Web Audio, no sound files ---------- */
+let ac, master, noiseBuf;
+function sfx(name) {
+  if (!V?.settings?.uiSound) return;
+  if (!ac) {
+    ac = new AudioContext();
+    master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+    noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const t = ac.currentTime;
+  const env = (node, vol, dur, at) => {
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t + at);
+    g.gain.exponentialRampToValueAtTime(vol, t + at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+    node.connect(g).connect(master);
+  };
+  const osc = (type, f0, f1, vol, dur, at = 0) => {
+    const o = ac.createOscillator(); o.type = type;
+    o.frequency.setValueAtTime(f0, t + at); o.frequency.exponentialRampToValueAtTime(f1, t + at + dur);
+    env(o, vol, dur, at); o.start(t + at); o.stop(t + at + dur + 0.05);
+  };
+  const hiss = (vol, dur, f0, f1 = f0, q = 1, at = 0) => {
+    const b = ac.createBufferSource(); b.buffer = noiseBuf;
+    const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = q;
+    f.frequency.setValueAtTime(f0, t + at); f.frequency.exponentialRampToValueAtTime(f1, t + at + dur);
+    b.connect(f); env(f, vol, dur, at); b.start(t + at); b.stop(t + at + dur + 0.05);
+  };
+  switch (name) {
+    case 'hover': hiss(0.05, 0.045, 4200, 4200, 2.5); break;
+    case 'click': osc('triangle', 520, 190, 0.16, 0.09); hiss(0.07, 0.03, 2600); break;
+    case 'page': hiss(0.09, 0.22, 700, 3200, 0.8); osc('sine', 330, 495, 0.03, 0.18); break;
+    case 'open': hiss(0.07, 0.2, 3000, 800, 0.9); osc('sine', 660, 990, 0.04, 0.16); break;
+    case 'play': // an ember catching: low drone, struck bell, rising air
+      osc('sine', 98, 96, 0.2, 1.7); osc('sine', 147, 145, 0.1, 1.5, 0.04);
+      osc('sine', 784, 784, 0.07, 1.3, 0.06); osc('sine', 2164, 2164, 0.025, 0.7, 0.06);
+      hiss(0.08, 0.7, 350, 5200, 0.6); break;
+    case 'ok': osc('sine', 880, 880, 0.08, 0.32); osc('sine', 1320, 1320, 0.07, 0.5, 0.08); break;
+    case 'error': osc('triangle', 180, 110, 0.18, 0.26); osc('triangle', 190, 112, 0.1, 0.26, 0.07); break;
+  }
+}
+let hovered = null;
+document.addEventListener('mouseover', e => {
+  const b = e.target.closest('button, .check');
+  if (b !== hovered) { hovered = b; if (b && !b.disabled) sfx('hover'); }
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b || b.disabled) return;
+  if (b.id === 'play' || b.id === 'connect') embers.burst(b);
+  sfx(b.id === 'play' || b.id === 'connect' ? 'play' : b.classList.contains('shot') ? 'open' : b.dataset.view ? 'page' : 'click');
+}, true);
+document.addEventListener('change', e => { if (e.target.type === 'checkbox') sfx('click'); });
+
 /* ---------- actions ---------- */
 async function start(connect) {
   if (phase || running) return;
+  $('#reel').pause();
   try {
     render(await api.call('play', { connect }));
     phase = null;
@@ -184,6 +310,7 @@ async function start(connect) {
   }
 }
 function failed(e) {
+  sfx('error');
   setStatus(errText(e), '', { error: true });
   setBar(0);
   setButtons();
@@ -266,6 +393,7 @@ $('#logout').addEventListener('click', async () => { render(await api.call('logo
 $('#mem').addEventListener('input', e => { $('#mem-out').textContent = gb(e.target.value); });
 $('#mem').addEventListener('change', async e => render(await api.call('settings', { memoryMb: Number(e.target.value) })));
 $('#hide-on-launch').addEventListener('change', async e => render(await api.call('settings', { hideOnLaunch: e.target.checked })));
+$('#ui-sound').addEventListener('change', async e => render(await api.call('settings', { uiSound: e.target.checked })));
 $$('[data-open]').forEach(b => b.addEventListener('click', () => api.call('open', b.dataset.open)));
 $$('[data-win]').forEach(b => b.addEventListener('click', () => api.call('win', b.dataset.win)));
 $('#launcher-update-get').addEventListener('click', () => V.launcherUpdate?.url && api.call('link', V.launcherUpdate.url));
@@ -286,6 +414,7 @@ function toast(text, error = false) {
   t.textContent = text;
   t.classList.toggle('error', error);
   t.classList.add('show');
+  sfx(error ? 'error' : 'ok');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
 }
