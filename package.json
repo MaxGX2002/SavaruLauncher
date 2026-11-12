@@ -1,0 +1,17 @@
+{
+  "name": "savaru-launcher",
+  "productName": "Savaru IV Launcher",
+  "version": "0.1.0",
+  "description": "Savaru IV - Kohtalon Mies launcher",
+  "main": "app/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "feed": "node tools/build-feed.js",
+    "dist": "node tools/dist.js"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "44.9.3"
+  }
+}
