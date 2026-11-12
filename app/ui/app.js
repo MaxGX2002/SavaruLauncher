@@ -7,15 +7,14 @@ const num = n => Number(n).toLocaleString('zh-TW');
 const mb = b => `${num(Math.round(b / 1048576))} MB`;
 const gb = m => `${(m / 1024).toFixed(1)} GB`;
 
-// The pack's cover art, a 30 s loop of v3.0 combat (media/reel-loop.mp4), then combat frames from the dungeon reels.
-// pos keeps each picture's subject in frame. Reduced motion skips the video.
+// The pack's cover art, a 30 s loop of v3.0 combat (media/reel-loop.mp4), a dungeon fight, then the user's own two
+// shots (the village road, the dungeon party screen). pos keeps each picture's subject in frame. Reduced motion skips the video.
 const ART = [
   { src: 'ruins.jpg', pos: '28% 50%' },
   { video: true },
   { src: 'combat-1.jpg', pos: '50% 50%' },
-  { src: 'combat-2.jpg', pos: '50% 50%' },
-  { src: 'combat-3.jpg', pos: '45% 50%' },
-  { src: 'combat-4.jpg', pos: '50% 50%' },
+  { src: 'field.jpg', pos: '50% 50%' },
+  { src: 'party.jpg', pos: '50% 45%' },
 ].filter(a => !a.video || !matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 const ERR = {
@@ -34,9 +33,9 @@ const ERR = {
   comment_failed: '留言送出失敗，請稍後再試。',
   comments_off: '留言板還沒開放。',
 };
-const errText = e => { const m = e?.message || String(e); return ERR[m] || '發生錯誤：' + m; };
+const errText = e => { const m = e?.message || String(e); return ERR[m] ? t(ERR[m]) : t('發生錯誤：') + m; };
 
-let V = null, phase = null, running = false, pendingConnect = null, loginUri = null;
+let V = null, phase = null, running = false, pendingPlay = false, loginUri = null;
 
 /* ---------- status line ---------- */
 function setStatus(text, detail = '', { error = false, action } = {}) {
@@ -58,54 +57,65 @@ function setBar(pct, mode = '') {
 function setButtons() {
   const off = !!phase || running || !V?.feed;
   $('#play').disabled = off;
-  $('#connect').disabled = off;
   $('#repair').disabled = off;
 }
 function idleStatus() {
-  if (!V.feed) return setStatus('無法取得模組包資訊', '請檢查網路連線', { error: true }), setBar(0);
-  const offline = V.feedOnline ? '' : '（離線模式）';
-  if (!V.installed) { setStatus('尚未安裝', `第一次開始遊戲時會下載約 ${gb(V.feed.sizeMb + 1000)}`); return setBar(0); }
-  if (!V.upToDate) { setStatus(`有新版本 ${V.feed.version}`, `目前 ${V.installed}・開始遊戲時會自動更新`); return setBar(0); }
-  setStatus('已是最新版本', V.feed.version + offline);
+  if (!V.feed) return setStatus(t('無法取得模組包資訊'), t('請檢查網路連線'), { error: true }), setBar(0);
+  const offline = V.feedOnline ? '' : t('（離線模式）');
+  if (!V.installed) { setStatus(t('尚未安裝'), t('第一次開始遊戲時會下載約 {size}', { size: gb(V.feed.sizeMb + 1000) })); return setBar(0); }
+  if (!V.upToDate) { setStatus(t('有新版本 {v}', { v: V.feed.version }), t('目前 {v}・開始遊戲時會自動更新', { v: V.installed })); return setBar(0); }
+  setStatus(t('已是最新版本'), V.feed.version + offline);
   setBar(100, 'full');
 }
 
 /* ---------- view ---------- */
 function render(v) {
+  if (v.settings.lang !== LANG) { setLang(v.settings.lang); labels(); pingServer(); }
   V = v;
+  $('#lang').value = LANG;
   $('#nav-version').textContent = v.feed?.version || '';
-  $('#build').textContent = `啟動器 ${v.launcherVersion}` + (v.installed ? `・已安裝 ${v.installed}` : '');
+  $('#build').textContent = t('啟動器 {v}', { v: v.launcherVersion }) + (v.installed ? t('・已安裝 {v}', { v: v.installed }) : '');
 
   const acc = $('#account');
   acc.classList.toggle('signed-out', !v.account);
   acc.innerHTML = v.account
-    ? `<span class="avatar">${esc(v.account.name[0].toUpperCase())}</span><span><b>${esc(v.account.name)}</b><small>Microsoft 帳號</small></span>`
-    : `<span class="avatar">✦</span><span><b>登入 Microsoft</b><small>連線伺服器需要正版帳號</small></span>`;
-  $('#acct-name').textContent = v.account ? v.account.name : '尚未登入';
+    ? `<span class="avatar">${esc(v.account.name[0].toUpperCase())}</span><span><b>${esc(v.account.name)}</b><small>${t('Microsoft 帳號')}</small></span>`
+    : `<span class="avatar">✦</span><span><b>${t('登入 Microsoft')}</b><small>${t('直接啟動需要正版帳號')}</small></span>`;
+  $('#acct-name').textContent = v.account ? v.account.name : t('尚未登入');
   $('#logout').hidden = !v.account;
 
-  if (v.feed?.server) {
-    $('#server-name').textContent = `${v.feed.server.name} 伺服器`;
-    $('#connect-sub').textContent = `進入 ${v.feed.server.name}`;
-  }
+  if (v.feed?.server) $('#server-name').textContent = t('{name} 伺服器', { name: v.feed.server.name });
   renderNews(v.feed?.news || []);
 
   const max = Math.max(4096, Math.min(32768, Math.floor((v.totalMemMb - 2048) / 512) * 512));
   const mem = $('#mem');
   mem.max = max; mem.value = Math.min(v.settings.memoryMb, max);
   $('#mem-out').textContent = gb(mem.value);
-  $('#mem-hint').textContent = `建議 8 GB 以上（這台電腦共 ${gb(v.totalMemMb)}）。分配太多反而可能變慢。`;
+  $('#mem-hint').textContent = t('建議 8 GB 以上（這台電腦共 {total}）。分配太多反而可能變慢。', { total: gb(v.totalMemMb) });
   $('#hide-on-launch').checked = v.settings.hideOnLaunch;
   $$('input[name="launcher"]').forEach(r => { r.checked = r.value === v.settings.launcher; });
   $('#ui-sound').checked = v.settings.uiSound;
   if (v.account && !$('#c-name').value) $('#c-name').value = v.account.name;
 
-  const up = v.launcherUpdate;
-  $('#launcher-update').hidden = !up;
-  if (up) $('#launcher-update-version').textContent = up.version;
+  selfUpdate(v.selfUpdate);
 
   if (!phase && !running) idleStatus();
   setButtons();
+}
+
+// Launcher update banner. Packaged builds update themselves (download → restart); a build without that,
+// or a failed self-update, falls back to the download link.
+function selfUpdate(s) {
+  const up = V?.launcherUpdate, el = $('#launcher-update');
+  el.hidden = !up;
+  if (!up) return;
+  const v = up.version, get = $('#launcher-update-get');
+  get.hidden = !!s && s.state !== 'error';
+  $('#launcher-update-text').textContent =
+    !s ? t('啟動器有新版本 {v}', { v })
+    : s.state === 'download' ? t('正在下載新版啟動器 {v}… {pct}%', { v, pct: s.pct })
+    : s.state === 'ready' ? t(running ? '新版啟動器 {v} 已下載，關閉遊戲後會自動更新' : '新版啟動器 {v} 已下載，即將重新啟動', { v })
+    : t('啟動器自動更新失敗');
 }
 
 /* ---------- changelog (small markdown subset: headings, nested bullets, bold, code) ---------- */
@@ -140,7 +150,7 @@ function md(src) {
 function renderNews(news) {
   $('#news').innerHTML = news.length
     ? news.map(n => `<div class="entry"><p class="date">${esc(n.date || '')}</p>${md(n.markdown || '')}</div>`).join('')
-    : '<p>目前沒有更新日誌。</p>';
+    : `<p>${t('目前沒有更新日誌。')}</p>`;
 }
 
 /* ---------- navigation ---------- */
@@ -163,23 +173,23 @@ async function loadComments() {
   const list = await api.call('comments').catch(() => undefined);
   const box = $('#comments');
   $('#comment-form').hidden = list === null;
-  if (list === null) return void (box.innerHTML = '<li class="empty">留言板即將開放。</li>');
-  if (!list) return void (box.dataset.loaded || (box.innerHTML = '<li class="empty">無法讀取留言，請檢查網路連線。</li>'));
+  if (list === null) return void (box.innerHTML = `<li class="empty">${t('留言板即將開放。')}</li>`);
+  if (!list) return void (box.dataset.loaded || (box.innerHTML = `<li class="empty">${t('無法讀取留言，請檢查網路連線。')}</li>`));
   box.dataset.loaded = 1;
   box.innerHTML = list.length
     ? list.map(c => `<li><p class="c-head"><b>${esc(c.name)}</b><time>${esc(c.at)}</time></p><p class="c-text">${esc(c.text)}</p></li>`).join('')
-    : '<li class="empty">還沒有留言，來當第一個吧。</li>';
+    : `<li class="empty">${t('還沒有留言，來當第一個吧。')}</li>`;
 }
 $('#comment-form').addEventListener('submit', async e => {
   e.preventDefault();
-  if (Date.now() - lastPost < 60000) return toast('每分鐘只能留言一次。', true);
+  if (Date.now() - lastPost < 60000) return toast(t('每分鐘只能留言一次。'), true);
   const b = $('#comment-send');
   b.disabled = true;
   try {
     await api.call('comment', { name: $('#c-name').value, text: $('#c-text').value });
     lastPost = Date.now();
     $('#c-text').value = '';
-    toast('留言已送出');
+    toast(t('留言已送出'));
     setTimeout(loadComments, 1500);
   } catch (err) { toast(errText(err), true); }
   b.disabled = false;
@@ -224,7 +234,7 @@ function show(i) {
   clearTimeout(timer);
   timer = setTimeout(() => show(slide + 1), slideMs(a));
 }
-$('#slides').innerHTML = ART.map((a, i) => `<button type="button" aria-label="背景 ${i + 1}"></button>`).join('');
+$('#slides').innerHTML = ART.map(() => '<button type="button"></button>').join('');
 $$('#slides button').forEach((b, i) => { b.style.setProperty('--dur', slideMs(ART[i]) + 'ms'); b.addEventListener('click', () => show(i)); });
 ART.forEach(a => { if (a.src) new Image().src = `../img/art/${a.src}`; });
 
@@ -284,7 +294,13 @@ function showShot(i) {
   $('#viewer-cap').textContent = `${shot + 1} / ${SHOTS}`;
   $('#viewer-img').animate([{ opacity: 0, transform: 'scale(0.97)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
 }
-$('#shots').innerHTML = Array.from({ length: SHOTS }, (_, i) => `<button type="button" class="shot" data-shot="${i}" aria-label="遊戲截圖 ${i + 1}"><img src="${shotSrc(i)}" alt="" loading="lazy" decoding="async"></button>`).join('');
+$('#shots').innerHTML = Array.from({ length: SHOTS }, (_, i) => `<button type="button" class="shot" data-shot="${i}"><img src="${shotSrc(i)}" alt="" loading="lazy" decoding="async"></button>`).join('');
+// Labels of the generated slide and screenshot buttons, redone on every language change.
+function labels() {
+  $$('#slides button').forEach((b, i) => b.setAttribute('aria-label', t('背景 {n}', { n: i + 1 })));
+  $$('.shot').forEach((b, i) => b.setAttribute('aria-label', t('遊戲截圖 {n}', { n: i + 1 })));
+}
+labels();
 $$('.shot').forEach((b, i) => b.style.setProperty('--i', i));
 $('#shots').addEventListener('click', e => { const b = e.target.closest('.shot'); if (b) { showShot(+b.dataset.shot); $('#viewer').showModal(); } });
 $('#viewer-prev').addEventListener('click', () => showShot(shot - 1));
@@ -345,31 +361,31 @@ document.addEventListener('mouseover', e => {
 document.addEventListener('click', e => {
   const b = e.target.closest('button');
   if (!b || b.disabled) return;
-  if (b.id === 'play' || b.id === 'connect') embers.burst(b);
-  sfx(b.id === 'play' || b.id === 'connect' ? 'play' : b.classList.contains('shot') ? 'open' : b.dataset.view ? 'page' : 'click');
+  if (b.id === 'play') embers.burst(b);
+  sfx(b.id === 'play' ? 'play' : b.classList.contains('shot') ? 'open' : b.dataset.view ? 'page' : 'click');
 }, true);
 document.addEventListener('change', e => { if (e.target.type === 'checkbox') sfx('click'); });
 
 /* ---------- actions ---------- */
-async function start(connect) {
+async function start() {
   if (phase || running) return;
   $('#reel').pause();
   try {
-    const v = await api.call('play', { connect });
+    const v = await api.call('play');
     render(v);
     phase = null;
     if (v.official) {
       sfx('ok');
-      setStatus('已開啟官方 Minecraft 啟動器', '在官方啟動器登入，選「Savaru IV - Kohtalon Mies」後按「遊玩」' + (connect ? '，進遊戲後到「多人遊戲」選 SAVARU' : ''));
+      setStatus(t('已開啟官方 Minecraft 啟動器'), t('在官方啟動器登入，選「Savaru IV - Kohtalon Mies」後按「遊玩」'));
       setBar(100, 'full');
       setButtons();
     }
   } catch (e) {
     phase = null;
-    if (e.message === 'login_required') { pendingConnect = connect; idleStatus(); setButtons(); return openLogin(); }
+    if (e.message === 'login_required') { pendingPlay = true; idleStatus(); setButtons(); return openLogin(); }
     if (e.message === 'no_official_launcher') {
       failed(e);
-      return setStatus(errText(e), '', { error: true, action: { label: '下載', run: () => api.call('link', 'https://www.minecraft.net/download') } });
+      return setStatus(errText(e), '', { error: true, action: { label: t('下載'), run: () => api.call('link', 'https://www.minecraft.net/download') } });
     }
     failed(e);
   }
@@ -380,12 +396,11 @@ function failed(e) {
   setBar(0);
   setButtons();
 }
-$('#play').addEventListener('click', () => start(false));
-$('#connect').addEventListener('click', () => start(true));
+$('#play').addEventListener('click', () => start());
 
 $('#repair').addEventListener('click', async () => {
   if (phase || running) return;
-  try { render(await api.call('install', { repair: true })); phase = null; idleStatus(); toast('檢查完成，遊戲檔案都正確。'); }
+  try { render(await api.call('install', { repair: true })); phase = null; idleStatus(); toast(t('檢查完成，遊戲檔案都正確。')); }
   catch (e) { phase = null; failed(e); }
 });
 
@@ -394,49 +409,51 @@ api.on('progress', p => {
   phase = p.phase === 'done' ? null : p.phase;
   setButtons();
   switch (p.phase) {
-    case 'plan': setStatus('讀取版本資訊…'); setBar(0, 'indeterminate'); break;
-    case 'verify': setStatus('檢查遊戲檔案…'); setBar(0, 'indeterminate'); speed = { t: 0, b: 0, v: 0 }; break;
+    case 'plan': setStatus(t('讀取版本資訊…')); setBar(0, 'indeterminate'); break;
+    case 'verify': setStatus(t('檢查遊戲檔案…')); setBar(0, 'indeterminate'); speed = { t: 0, b: 0, v: 0 }; break;
     case 'download': {
       if (!p.filesTotal) break;
       const now = performance.now();
       if (speed.t && now - speed.t > 400) { const inst = (p.done - speed.b) / ((now - speed.t) / 1000); speed.v = speed.v ? speed.v * 0.7 + inst * 0.3 : inst; speed.t = now; speed.b = p.done; }
       if (!speed.t) { speed.t = now; speed.b = p.done; }
       const pct = p.total ? Math.min(100, (p.done / p.total) * 100) : (p.files / p.filesTotal) * 100;
-      setStatus(`下載中 ${Math.floor(pct)}%`, `${num(p.files)} / ${num(p.filesTotal)} 個檔案・${mb(Math.min(p.done, p.total))} / ${mb(p.total)}` + (speed.v ? `・${mb(speed.v)}/s` : ''));
+      setStatus(t('下載中 {pct}%', { pct: Math.floor(pct) }), t('{files} / {total} 個檔案・{done} / {size}', { files: num(p.files), total: num(p.filesTotal), done: mb(Math.min(p.done, p.total)), size: mb(p.total) }) + (speed.v ? ` · ${mb(speed.v)}/s` : ''));
       setBar(pct);
       break;
     }
-    case 'extract': setStatus('安裝模組包設定…'); setBar(100, 'indeterminate'); break;
-    case 'launch': setStatus('啟動遊戲中…', '第一次啟動約需一到兩分鐘'); setBar(100, 'indeterminate'); break;
+    case 'extract': setStatus(t('安裝模組包設定…')); setBar(100, 'indeterminate'); break;
+    case 'launch': setStatus(t('啟動遊戲中…'), t('第一次啟動約需一到兩分鐘')); setBar(100, 'indeterminate'); break;
     case 'done': setBar(100); break;
   }
 });
 
 api.on('game', g => {
   running = g.running;
-  if (g.running) { setStatus('遊戲執行中', '關閉遊戲後會回到這裡'); setBar(100, 'full'); }
+  if (g.running) { setStatus(t('遊戲執行中'), t('關閉遊戲後會回到這裡')); setBar(100, 'full'); }
   else if (g.error) failed(new Error(g.error));
-  else if (g.code) { setStatus(`遊戲異常結束（代碼 ${g.code}）`, '', { error: true, action: { label: '開啟紀錄檔', run: () => api.call('open', 'logs') } }); setBar(0); }
+  else if (g.code) { setStatus(t('遊戲異常結束（代碼 {code}）', { code: g.code }), '', { error: true, action: { label: t('開啟紀錄檔'), run: () => api.call('open', 'logs') } }); setBar(0); }
   else idleStatus();
   setButtons();
+  selfUpdate(V?.selfUpdate);
 });
+api.on('self-update', s => { if (V) V.selfUpdate = s; selfUpdate(s); });
 
 /* ---------- login ---------- */
 async function openLogin() {
   const m = $('#login');
   m.hidden = false;
   const msg = $('#login-msg'), body = $('#login-body');
-  if (!V.loginConfigured) { msg.textContent = ERR.login_not_configured; msg.hidden = false; body.hidden = true; return; }
+  if (!V.loginConfigured) { msg.textContent = t(ERR.login_not_configured); msg.hidden = false; body.hidden = true; return; }
   msg.hidden = true; body.hidden = false;
   $('#login-code').textContent = '· · · · · · · ·';
-  $('#login-wait').textContent = '正在取得登入代碼…';
+  $('#login-wait').textContent = t('正在取得登入代碼…');
   $('.wait .spin').hidden = false;
   try {
     const v = await api.call('login');
     m.hidden = true;
     render(v);
-    toast(`已登入：${v.account.name}`);
-    if (pendingConnect !== null) { const c = pendingConnect; pendingConnect = null; start(c); }
+    toast(t('已登入：{name}', { name: v.account.name }));
+    if (pendingPlay) { pendingPlay = false; start(); }
   } catch (e) {
     if (e.message === 'cancelled') return;
     $('#login-wait').textContent = errText(e);
@@ -445,16 +462,17 @@ async function openLogin() {
 }
 api.on('login-code', d => {
   $('#login-code').textContent = d.code;
-  $('#login-wait').textContent = '等待你在瀏覽器完成登入…';
+  $('#login-wait').textContent = t('等待你在瀏覽器完成登入…');
   loginUri = d.uri;
 });
 $('#login-open').addEventListener('click', () => api.call('link', loginUri || 'https://www.microsoft.com/link'));
-$('#login-copy').addEventListener('click', async () => { await api.call('copy', $('#login-code').textContent); toast('已複製登入代碼'); });
-$('#login-cancel').addEventListener('click', () => { api.call('login-cancel'); $('#login').hidden = true; pendingConnect = null; });
+$('#login-copy').addEventListener('click', async () => { await api.call('copy', $('#login-code').textContent); toast(t('已複製登入代碼')); });
+$('#login-cancel').addEventListener('click', () => { api.call('login-cancel'); $('#login').hidden = true; pendingPlay = false; });
 $('#account').addEventListener('click', () => (V.account ? go('settings') : openLogin()));
-$('#logout').addEventListener('click', async () => { render(await api.call('logout')); toast('已登出'); });
+$('#logout').addEventListener('click', async () => { render(await api.call('logout')); toast(t('已登出')); });
 
 /* ---------- settings ---------- */
+$('#lang').addEventListener('change', async e => render(await api.call('settings', { lang: e.target.value })));
 $('#mem').addEventListener('input', e => { $('#mem-out').textContent = gb(e.target.value); });
 $('#mem').addEventListener('change', async e => render(await api.call('settings', { memoryMb: Number(e.target.value) })));
 $('#hide-on-launch').addEventListener('change', async e => render(await api.call('settings', { hideOnLaunch: e.target.checked })));
@@ -470,7 +488,7 @@ async function pingServer() {
   const el = $('#server');
   el.classList.toggle('online', !!r);
   el.classList.toggle('offline', !r && !!V?.feed);
-  $('#server-line').textContent = r ? `${r.online} / ${r.max} 人在線・${r.ms} ms` : V?.feed ? '目前無法連線' : '—';
+  $('#server-line').textContent = r ? t('{online} / {max} 人在線・{ms} ms', r) : V?.feed ? t('目前無法連線') : '—';
 }
 
 /* ---------- toast ---------- */

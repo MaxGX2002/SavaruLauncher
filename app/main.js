@@ -33,9 +33,15 @@ const writeJson = (f, v) => { fs.mkdirSync(path.dirname(f), { recursive: true })
 const send = (ch, d) => win && !win.isDestroyed() && win.webContents.send(ch, d);
 
 const totalMemMb = Math.floor(os.totalmem() / 1048576);
+const LANGS = ['zh-Hant', 'zh-Hans', 'en'];
+// First run picks the language from Windows: any Chinese → Traditional unless it is the mainland/Singapore form.
+function systemLang() {
+  const zh = [...app.getPreferredSystemLanguages(), app.getSystemLocale()].map(s => s.toLowerCase()).find(s => s.startsWith('zh'));
+  return !zh ? 'en' : /hans|cn|sg/.test(zh) ? 'zh-Hans' : 'zh-Hant';
+}
 function settings() {
   // launcher: 'official' = hand off to the official Minecraft Launcher (default), 'direct' = our own Microsoft sign-in.
-  const def = { memoryMb: totalMemMb >= 15000 ? 8192 : totalMemMb >= 11000 ? 6144 : 4096, hideOnLaunch: true, uiSound: true, launcher: 'official' };
+  const def = { memoryMb: totalMemMb >= 15000 ? 8192 : totalMemMb >= 11000 ? 6144 : 4096, hideOnLaunch: true, uiSound: true, launcher: 'official', lang: systemLang() };
   return { ...def, ...readJson(F.settings, {}) };
 }
 
@@ -62,14 +68,72 @@ async function session() {
 async function loadFeed() {
   try {
     if (!FEED_URL) throw new Error('no feed url');
-    feed = await U.fetchJson(FEED_URL);
+    // The query string skips GitHub's 5-minute raw cache, so a pushed update shows up at once.
+    feed = await U.fetchJson(/^https?:/.test(FEED_URL) ? `${FEED_URL}?t=${Date.now()}` : FEED_URL);
     writeJson(F.feed, feed);
     feedOnline = true;
+    startSelfUpdate();
   } catch {
     feed = readJson(F.feed, null);
     feedOnline = false;
   }
   return feed;
+}
+
+// Self-update (packaged builds only): download the zip named in feed.launcher.download, unpack it under the cache,
+// and once nothing is running, quit and let a hidden PowerShell copy it over this install and start it again.
+let selfUpdate = null; // { version, state: 'download' | 'ready' | 'error', pct }
+async function startSelfUpdate() {
+  const L = feed?.launcher;
+  if (!app.isPackaged || selfUpdate || !L?.download || !newer(L.version, app.getVersion())) return;
+  const report = s => { selfUpdate = s; send('self-update', s); };
+  report({ version: L.version, state: 'download', pct: 0 });
+  try {
+    const dir = path.join(BASE, 'cache', `launcher-${L.version}`), zip = dir + '.zip';
+    let got = 0;
+    if (!fs.existsSync(zip) || await U.sha1File(zip) !== L.download.sha1) {
+      await U.download({ path: zip, urls: [L.download.url], sha1: L.download.sha1, size: L.download.size }, n => {
+        got += n;
+        const pct = Math.floor((got / L.download.size) * 100);
+        if (pct !== selfUpdate.pct) report({ ...selfUpdate, pct });
+      });
+    }
+    // Electron's fs treats any path through an .asar file as the inside of an archive, so writing
+    // resources/app.asar fails unless that is switched off while unpacking.
+    process.noAsar = true;
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+      for (const e of U.unzip(fs.readFileSync(zip))) {
+        const out = U.safeJoin(dir, e.name);
+        fs.mkdirSync(path.dirname(out), { recursive: true });
+        fs.writeFileSync(out, e.read());
+      }
+    } finally { process.noAsar = false; }
+    // The zip holds one folder with the exe in it.
+    const exe = path.basename(process.execPath);
+    const src = [dir, ...fs.readdirSync(dir).map(d => path.join(dir, d))].find(d => fs.existsSync(path.join(d, exe)));
+    if (!src) throw new Error(`no ${exe} in the update`);
+    report({ ...selfUpdate, state: 'ready' });
+    const apply = () => (busy || gameProc ? setTimeout(apply, 3000) : applySelfUpdate(src));
+    setTimeout(apply, 2500);
+  } catch (e) {
+    report({ ...selfUpdate, state: 'error', error: e.message });
+  }
+}
+function applySelfUpdate(src) {
+  const q = s => `'${s.replace(/'/g, "''")}'`;
+  // ponytail: copies over the old files without deleting any (the folder may hold the player's own files); stale Electron files are harmless.
+  const ps = [
+    `$p = ${process.pid}; while (Get-Process -Id $p -ErrorAction SilentlyContinue) { Start-Sleep -Milliseconds 300 }`,
+    `robocopy ${q(src)} ${q(path.dirname(process.execPath))} /E /R:20 /W:1 /NFL /NDL /NJH /NJS | Out-Null`,
+    `Start-Process -FilePath ${q(process.execPath)}` + (process.argv.length > 1 ? ` -ArgumentList ${process.argv.slice(1).map(a => q(`"${a}"`)).join(',')}` : ''),
+  ].join('\n');
+  // A detached PowerShell exits at once (no console), and a plain child dies with libuv's kill-on-close job;
+  // a Start-Process grandchild breaks away from that job, so the outer one only relays and we quit once it has.
+  const relay = `Start-Process powershell.exe -WindowStyle Hidden -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-EncodedCommand','${Buffer.from(ps, 'utf16le').toString('base64')}'`;
+  const c = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', relay], { stdio: 'ignore', windowsHide: true });
+  c.on('exit', () => app.quit());
+  c.on('error', () => app.quit());
 }
 
 const newer = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); return false; };
@@ -86,6 +150,7 @@ function view() {
     settings: settings(), totalMemMb,
     launcherVersion: app.getVersion(),
     launcherUpdate: feed?.launcher?.version && newer(feed.launcher.version, app.getVersion()) ? feed.launcher : null,
+    selfUpdate,
     running: !!gameProc,
   };
 }
@@ -107,8 +172,9 @@ async function exclusive(fn) {
   try { return await fn(); } finally { busy = false; }
 }
 
+// Every Play / repair checks the feed again, so a launcher left open still gets the newest pack.
 async function ensureInstalled(repair) {
-  if (!feed) await loadFeed();
+  await loadFeed();
   if (!feed) throw new Error('no_feed');
   await game.install(BASE, feed, { repair, onProgress: p => send('progress', p) });
 }
@@ -117,7 +183,7 @@ const handlers = {
   init: async () => { await loadFeed(); return view(); },
   refresh: async () => { await loadFeed(); return view(); },
   install: ({ repair } = {}) => exclusive(async () => { await ensureInstalled(repair); return view(); }),
-  play: ({ connect } = {}) => exclusive(async () => {
+  play: () => exclusive(async () => {
     if (gameProc) throw new Error('already_running');
     // Official mode: install, then hand off to the official launcher, which does its own sign-in.
     if (!DEV_OFFLINE && settings().launcher !== 'direct') {
@@ -131,7 +197,7 @@ const handlers = {
     await ensureInstalled(false);
     send('progress', { phase: 'launch' });
     const s = settings();
-    const cmd = game.launchCommand(BASE, feed, acc, { memoryMb: s.memoryMb, server: connect ? feed.server.address : null, msaClientId: CLIENT_ID });
+    const cmd = game.launchCommand(BASE, feed, acc, { memoryMb: s.memoryMb, msaClientId: CLIENT_ID });
     gameProc = spawn(cmd.java, cmd.args, { cwd: cmd.cwd, stdio: 'ignore', windowsHide: false });
     const started = Date.now();
     gameProc.on('exit', code => {
@@ -158,7 +224,8 @@ const handlers = {
   logout: () => { saveAccount(null); return view(); },
   settings: s => {
     const cur = settings();
-    const next = { memoryMb: Math.max(2048, Math.min(Number(s.memoryMb) || cur.memoryMb, totalMemMb - 1024)), hideOnLaunch: s.hideOnLaunch ?? cur.hideOnLaunch, uiSound: s.uiSound ?? cur.uiSound, launcher: ['official', 'direct'].includes(s.launcher) ? s.launcher : cur.launcher };
+    const next = { memoryMb: Math.max(2048, Math.min(Number(s.memoryMb) || cur.memoryMb, totalMemMb - 1024)), hideOnLaunch: s.hideOnLaunch ?? cur.hideOnLaunch, uiSound: s.uiSound ?? cur.uiSound,
+      launcher: ['official', 'direct'].includes(s.launcher) ? s.launcher : cur.launcher, lang: LANGS.includes(s.lang) ? s.lang : cur.lang };
     writeJson(F.settings, next);
     return view();
   },

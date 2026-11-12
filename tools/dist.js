@@ -36,4 +36,7 @@ fs.writeFileSync(ico, Buffer.concat([head, png]));
   // Windows' own bsdtar: Git's GNU tar on PATH reads "C:" as a remote host.
   execFileSync(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe'), ['-a', '-cf', zip, '-C', path.dirname(out), path.basename(out)]);
   console.log(`built ${out}\nzipped ${zip} (${(fs.statSync(zip).size / 1048576).toFixed(0)} MB)`);
+  // For feed/launcher-release.json "download", which running launchers use to update themselves.
+  const sha1 = require('crypto').createHash('sha1').update(fs.readFileSync(zip)).digest('hex');
+  console.log(`download: ${JSON.stringify({ sha1, size: fs.statSync(zip).size })}`);
 })().catch(e => { console.error(e); process.exit(1); });
