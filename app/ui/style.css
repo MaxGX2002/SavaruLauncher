@@ -85,6 +85,22 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ember); out
 .nav em { font: 600 11.5px var(--font); font-style: normal; color: var(--ink-3); font-variant-numeric: tabular-nums; transition: color 0.3s ease; }
 .nav button[aria-current="page"] em { color: rgba(255, 255, 255, 0.72); }
 
+/* Discord / CurseForge: flat icon buttons under the page list (Simple Icons paths, CC0) */
+.socials { display: flex; gap: 8px; padding: 14px 0 0 28px; animation: rise 0.7s var(--ease) 0.95s both; }
+/* the sidebar needs ~667 px at full spacing; the window can be 640 px tall */
+@media (max-height: 700px) {
+  .sidebar { padding-top: 18px; }
+  .tagline { margin: 0 -6px 10px; }
+  .nav button { padding-top: 8px; padding-bottom: 8px; }
+  .socials { padding-top: 8px; }
+}
+.social {
+  display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 4px;
+  background: var(--paper-2); color: var(--ink-2); transition: background 0.25s ease, color 0.25s ease, transform 0.3s var(--ease);
+}
+.social svg { width: 19px; height: 19px; fill: currentColor; }
+.social:hover { background: var(--crimson); color: #fff; transform: translateY(-2px); }
+
 .side-fill { flex: 1; }
 
 .server, .account, .build { animation: rise 0.8s var(--ease) 0.9s both; }
@@ -224,7 +240,7 @@ video.bg-img { width: 100%; height: 100%; object-fit: cover; }
 
 /* community: four flat link tiles, then the comment wall */
 .community { max-width: 860px; }
-.links { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+.links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 22px; }
 .link-card {
   position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px 16px 13px;
   border: 0; border-radius: 4px; background: rgba(255, 255, 255, 0.07); text-align: left; overflow: hidden;

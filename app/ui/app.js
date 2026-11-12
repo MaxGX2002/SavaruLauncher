@@ -183,6 +183,11 @@ $('#comment-form').addEventListener('submit', async e => {
   b.disabled = false;
 });
 $$('[data-link]').forEach(b => b.addEventListener('click', () => api.call('link', b.dataset.link)));
+// Nav spacing shrinks on short windows, so the sliding block re-measures its button.
+addEventListener('resize', () => {
+  const cur = $('.nav button[aria-current="page"]'), mark = $('.nav-mark');
+  if (cur) { mark.style.height = cur.offsetHeight + 'px'; mark.style.transform = `translateY(${cur.offsetTop}px)`; }
+});
 document.addEventListener('click', e => {
   const v = e.target.closest('[data-view]');
   if (v) go(v.dataset.view);
