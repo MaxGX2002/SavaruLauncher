@@ -4,9 +4,12 @@
 // test instance's minecraftinstance.json (name, sha1, size, distribution flag), prefers Modrinth's
 // copy of the identical file (same sha1) and falls back to CurseForge's CDN only for files whose
 // authors allow third-party distribution. Every URL is probed before the feed is written.
+// The pack zip, and any of the author's own jars that CurseForge is still reviewing, go up to a GitHub release
+// `pack-<version>` (not marked latest), so the launcher gets a build before CurseForge approves it.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { execFileSync } = require('child_process');
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
@@ -19,8 +22,21 @@ const MAIN = 'D:/minecraft/Instances/Savaru IV - Kohtalon Mies';
 const ZIP = opt('--zip', `C:/Users/User/Downloads/Savaru IV - Kohtalon Mies-${version}.zip`);
 const CHANGELOG = opt('--changelog', `D:/minecraft/_tools/pack-changelog-${version}.md`);
 const OUT = opt('--out', path.join(__dirname, '..', 'feed', 'launcher.json'));
-const PROJECT = 1502016;
 const UA = 'SavaruLauncher-feed/1.0';
+const GH = opt('--gh', 'C:/Users/User/Downloads/ModTest/_tools/gh/bin/gh.exe');
+const REPO = 'MaxGX2002/SavaruLauncher';
+const TAG = `pack-${version}`;
+const ghUrl = name => `https://github.com/${REPO}/releases/download/${TAG}/${encodeURIComponent(name)}`;
+const gh = (...args) => execFileSync(GH, [...args, '--repo', REPO], { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
+function ghUpload(file, name) {
+  try { gh('release', 'view', TAG); } catch {
+    gh('release', 'create', TAG, '--latest=false', '--title', `Modpack ${version}`, '--notes', `Savaru IV - Kohtalon Mies ${version}: files for the launcher.`);
+  }
+  const tmp = path.join(require('os').tmpdir(), name);
+  fs.copyFileSync(file, tmp);
+  try { gh('release', 'upload', TAG, tmp, '--clobber'); } finally { fs.rmSync(tmp, { force: true }); }
+  return ghUrl(name);
+}
 
 const sha1 = file => crypto.createHash('sha1').update(fs.readFileSync(file)).digest('hex');
 const cdn = (id, name) => `https://mediafilez.forgecdn.net/files/${Math.floor(id / 1000)}/${id % 1000}/${encodeURIComponent(name)}`;
@@ -56,7 +72,7 @@ async function probe(url) {
     const rel = x ? `mods/${x.jar}` : r ? `${r.dir}/${r.file}` : null;
     if (!rel || !fs.existsSync(`${INST}/${rel}`)) { console.error(`unresolved manifest entry ${m.projectID}/${m.fileID}`); process.exit(1); }
     // ponytail: pack-extra files are the author's own uploads (or ones already checked), so CF distribution is allowed
-    files.push({ path: rel, name: path.basename(rel), sha1: sha1(`${INST}/${rel}`), size: fs.statSync(`${INST}/${rel}`).size, cf: cdn(m.fileID, path.basename(rel)), dist: true });
+    files.push({ path: rel, name: path.basename(rel), sha1: sha1(`${INST}/${rel}`), size: fs.statSync(`${INST}/${rel}`).size, cf: cdn(m.fileID, path.basename(rel)), dist: true, own: `${INST}/${rel}` });
   }
 
   const mr = await (await fetch('https://api.modrinth.com/v2/version_files', {
@@ -72,24 +88,26 @@ async function probe(url) {
     if (mf) urls.push(mf.url);
     if (f.dist) urls.push(f.cf);
     if (!urls.length) { dropped.push(f); continue; }
-    out.push({ path: f.path, sha1: f.sha1, size: f.size, urls });
+    out.push({ path: f.path, sha1: f.sha1, size: f.size, urls, own: f.own });
   }
 
   // Probe the first URL of every file; a dead first URL with a live second one is fine but noted.
+  // The author's own jars that are dead everywhere (still in CurseForge review) are put on the GitHub release.
   let bad = 0, fallback = 0;
+  const rehost = [];
   for (let i = 0; i < out.length; i += 16) {
     await Promise.all(out.slice(i, i + 16).map(async f => {
       if (await probe(f.urls[0])) return;
       if (f.urls[1] && await probe(f.urls[1])) { fallback++; f.urls.reverse(); return; }
+      if (f.own) return rehost.push(f);
       bad++; console.error(`dead: ${f.path}  ${f.urls.join(' | ')}`);
     }));
   }
+  for (const f of rehost) { f.urls = [ghUpload(f.own, path.basename(f.path)), ...f.urls]; console.log(`on GitHub (CurseForge still reviewing): ${f.path}`); }
+  for (const f of out) delete f.own;
 
-  // The pack zip on CurseForge: CF stores it under a sanitised name, so ask cfwidget for it.
-  let zipName;
-  try { zipName = (await (await fetch(`https://api.cfwidget.com/${PROJECT}`, { headers: { 'User-Agent': UA } })).json()).files.find(f => f.id === fileId)?.name; } catch {}
-  zipName ||= path.basename(ZIP).replace(/ - /g, '-').replace(/ /g, '-');
-  const zip = { url: cdn(fileId, zipName), sha1: sha1(ZIP), size: fs.statSync(ZIP).size };
+  const zipName = `Savaru-IV-${version}.zip`;
+  const zip = { url: ghUpload(ZIP, zipName), sha1: sha1(ZIP), size: fs.statSync(ZIP).size };
   if (!(await probe(zip.url))) { console.error(`pack zip not reachable: ${zip.url}`); bad++; }
 
   const ml = manifest.minecraft.modLoaders[0].id; // fabric-0.19.5
@@ -106,7 +124,7 @@ async function probe(url) {
     files: out,
   };
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
-  fs.writeFileSync(OUT, JSON.stringify(feed, null, 1));
+  fs.writeFileSync(OUT, JSON.stringify(feed, null, 2));
   const mrCount = out.filter(f => f.urls[0].includes('modrinth')).length;
   console.log(`files ${out.length} (Modrinth ${mrCount}, CurseForge ${out.length - mrCount}, switched to fallback ${fallback}), dead ${bad}`);
   if (dropped.length) console.log('left out (no permitted source):\n  ' + dropped.map(f => `${f.name}  [${f.path}]`).join('\n  '));
