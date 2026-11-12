@@ -49,47 +49,51 @@ const S = {
     '需要拥有 Minecraft Java 版的 Microsoft 账号，并安装<a href="{mc}">官方 Minecraft Launcher</a>。',
     'You need a Microsoft account that owns Minecraft: Java Edition, and the <a href="{mc}">official Minecraft Launcher</a>.',
   ],
-  stepsH: ['三步開始遊戲', '三步开始游戏', 'Three steps to play'],
-  s1h: ['下載並解壓縮', '下载并解压', 'Download and unzip'],
-  s1: ['把 zip 解壓縮到任何資料夾，例如桌面。', '把 zip 解压到任意文件夹，例如桌面。', 'Unzip it into any folder, such as your desktop.'],
-  s2h: ['執行 SavaruLauncher.exe', '运行 SavaruLauncher.exe', 'Run SavaruLauncher.exe'],
-  s2: ['按「開始遊戲」。啟動器會裝好 Java、Minecraft 1.21.1、Fabric 和所有模組，第一次要下載的檔案比較多。',
-    '按“开始游戏”。启动器会装好 Java、Minecraft 1.21.1、Fabric 和所有模组，第一次要下载的文件比较多。',
-    'Press Play. The launcher installs Java, Minecraft 1.21.1, Fabric and every mod; the first run downloads the most.'],
-  s3h: ['在官方啟動器按「遊玩」', '在官方启动器按“开始游戏”', 'Press Play in the official launcher'],
-  s3: ['官方 Minecraft Launcher 會自動打開並選好「Savaru IV - Kohtalon Mies」。登入 Microsoft 帳號後按「遊玩」。',
-    '官方 Minecraft Launcher 会自动打开并选好“Savaru IV - Kohtalon Mies”。登录 Microsoft 账号后开始游戏。',
-    'The official Minecraft Launcher opens with "Savaru IV - Kohtalon Mies" selected. Sign in with your Microsoft account and press Play.'],
-  server: ['進遊戲後到「多人遊戲」選 <b>SAVARU</b>，就能連線伺服器。', '进游戏后到“多人游戏”选 <b>SAVARU</b>，就能连接服务器。', 'In game, open Multiplayer and pick <b>SAVARU</b> to join the server.'],
-  whyH: ['為什麼用啟動器', '为什么用启动器', 'Why the launcher'],
-  f1h: ['一鍵安裝', '一键安装', 'One-click install'],
-  f1: ['Java、Minecraft、Fabric、四百多個模組和設定檔，全部自動裝好。', 'Java、Minecraft、Fabric、四百多个模组和配置文件，全部自动装好。', 'Java, Minecraft, Fabric, over four hundred mods and their configs, all set up for you.'],
-  f2h: ['更新最快', '更新最快', 'Updates first'],
-  f2: ['新版模組包一發布就能更新，不用等 CurseForge 審核。每次按「開始遊戲」都會檢查。', '新版整合包一发布就能更新，不用等 CurseForge 审核。每次按“开始游戏”都会检查。', 'New pack versions arrive as soon as they are released, before CurseForge review. Every Play checks for one.'],
-  f3h: ['啟動器自動更新', '启动器自动更新', 'Updates itself'],
-  f3: ['有新版啟動器時，會自己下載、更新並重新開啟。', '有新版启动器时，会自己下载、更新并重新打开。', 'When a new launcher is out, it downloads it, updates and restarts on its own.'],
-  f4h: ['保留你的設定', '保留你的设置', 'Keeps your settings'],
-  f4: ['模組包這一版沒改到的設定檔，會保留你自己的修改。', '整合包这一版没改到的配置文件，会保留你自己的修改。', 'Config files the new pack version does not touch keep your own changes.'],
+  introH: ['一個與眾不同的 Minecraft 模組整合包', '一个与众不同的 Minecraft 模组整合包', 'A Minecraft modpack unlike any other'],
+  i1h: ['主打 MOBA 俯視角的 ARPG 體驗', '主打 MOBA 俯视角的 ARPG 体验', 'A top-down ARPG, MOBA-style'],
+  i1: ['如同「Minecraft Dungeons」、「Diablo」系列以及「Path of Exile」的純正 ARPG 玩法視角，帶給你截然不同的 Minecraft 體驗。',
+    '如同“Minecraft Dungeons”、“Diablo”系列以及“Path of Exile”的纯正 ARPG 玩法视角，带给你截然不同的 Minecraft 体验。',
+    'The true ARPG view of Minecraft Dungeons, the Diablo series and Path of Exile, for a Minecraft that plays like nothing you have seen.'],
+  i2h: ['獨特的操作方式與沉浸式互動介面', '独特的操作方式与沉浸式互动界面', 'Click to move, and an immersive interface'],
+  i2: ['點擊畫面進行移動，取代傳統 WASD 移動方式。遊戲中將帶給你更加豐富的交互方式與動畫，身歷其境的置身於奇幻世界之中。',
+    '点击画面进行移动，取代传统 WASD 移动方式。游戏中将带给你更加丰富的交互方式与动画，身临其境地置身于奇幻世界之中。',
+    'Click where you want to go instead of walking with WASD. Richer interactions and animations put you right inside a world of fantasy.'],
+  i3h: ['完整的世界觀與設定', '完整的世界观与设定', 'A whole world and its lore'],
+  i3: ['擁有專屬的世界觀、故事設定，在這片土地上的故事將由你親手挖掘、開拓。完善的世界歷史將使你漫遊在名為「魯瓦多」的大陸中，並且成為命運的一部分。',
+    '拥有专属的世界观、故事设定，在这片土地上的故事将由你亲手挖掘、开拓。完善的世界历史将使你漫游在名为“鲁瓦多”的大陆中，并且成为命运的一部分。',
+    'Its own world and story, for you to dig up and carve out yourself. A full history lets you roam the continent of Ruwado and become part of its fate.'],
+  outro: ['孤身奮鬥於這片充滿謎團的土地，或是與餘燼中的生命一起並肩作戰。', '孤身奋斗于这片充满谜团的土地，或是与余烬中的生命一起并肩作战。',
+    'Fight alone across this land of mysteries, or stand together with the lives left in the embers.'],
+  featH: ['遊戲特色', '游戏特色', 'Features'],
+  f1h: ['專屬打造的機制系統模組', '专属打造的机制系统模组', 'Systems made for Savaru'],
+  f1: ['多達 20 個以上的自製核心系統模組，組成薩瓦魯最獨特的 RPG 遊戲體驗。', '多达 20 个以上的自制核心系统模组，组成萨瓦鲁最独特的 RPG 游戏体验。',
+    'More than 20 core system mods of our own make up the RPG experience only Savaru has.'],
+  f2h: ['視角與操作融合切換', '视角与操作融合切换', 'Switch the view, switch the controls'],
+  f2: ['不用擔心操作的不習慣。F5 隨意變換第三與第一人稱，連同操作方式也一起變化。', '不用担心操作不习惯。F5 随意切换第三与第一人称，操作方式也一起变化。',
+    'Not used to it? Press F5 to switch between third and first person, and the controls switch with it.'],
+  f3h: ['活躍的社群反饋', '活跃的社区反馈', 'An active community'],
+  f3: ['快速且方便的意見反饋方式與社群連結，問題的回報不再拖延。', '快速且方便的意见反馈方式与社区链接，问题的反馈不再拖延。',
+    'Quick, easy ways to give feedback and reach the community, so a reported problem never sits waiting.'],
+  f4h: ['獨有的角色帳號存取檔機制', '独有的角色账号存取档机制', 'Character saves'],
+  f4: ['擁有角色存檔功能，讓你橫跨不同世界打造同一隻專屬角色。', '拥有角色存档功能，让你横跨不同世界打造同一个专属角色。',
+    'Save your character and build the same one across different worlds.'],
   shot: ['Savaru IV 遊戲畫面', 'Savaru IV 游戏画面', 'Savaru IV gameplay'],
   faqH: ['常見問題', '常见问题', 'Questions'],
-  q1: ['Windows 跳出「Windows 已保護您的電腦」？', 'Windows 弹出“Windows 已保护你的电脑”？', 'Windows says "Windows protected your PC"?'],
-  a1: ['啟動器沒有付費的數位簽章，第一次執行時 Windows 可能會提醒。按「其他資訊」，再按「仍要執行」。',
-    '启动器没有付费的数字签名，第一次运行时 Windows 可能会提醒。点“更多信息”，再点“仍要运行”。',
-    'The launcher has no paid code-signing certificate, so Windows may warn on first run. Click "More info", then "Run anyway".'],
-  q2: ['需要正版 Minecraft 嗎？', '需要正版 Minecraft 吗？', 'Do I need to own Minecraft?'],
-  a2: ['需要。請用擁有 Minecraft Java 版的 Microsoft 帳號，並先安裝官方 Minecraft Launcher。',
-    '需要。请用拥有 Minecraft Java 版的 Microsoft 账号，并先安装官方 Minecraft Launcher。',
-    'Yes. Use a Microsoft account that owns Minecraft: Java Edition, and install the official Minecraft Launcher first.'],
-  q3: ['遊戲檔案存在哪裡？', '游戏文件存在哪里？', 'Where are the game files?'],
-  a3: ['在 <code>%APPDATA%\\.savaru-iv</code>。啟動器放在哪個資料夾都可以，換資料夾也不會遺失遊戲、帳號和設定。',
-    '在 <code>%APPDATA%\\.savaru-iv</code>。启动器放在哪个文件夹都可以，换文件夹也不会丢失游戏、账号和设置。',
-    'In <code>%APPDATA%\\.savaru-iv</code>. The launcher can live in any folder; moving it keeps your game, account and settings.'],
-  q4: ['可以用 CurseForge 安裝嗎？', '可以用 CurseForge 安装吗？', 'Can I use CurseForge instead?'],
-  a4: ['可以，模組包也在 <a href="{cf}">CurseForge</a> 上。用 Savaru 啟動器的話，新版會比 CurseForge 更早拿到。',
-    '可以，整合包也在 <a href="{cf}">CurseForge</a> 上。用 Savaru 启动器的话，新版会比 CurseForge 更早拿到。',
-    'Yes, the pack is on <a href="{cf}">CurseForge</a> too. With the Savaru launcher you get new versions before CurseForge does.'],
-  q5: ['支援 Mac 或 Linux 嗎？', '支持 Mac 或 Linux 吗？', 'Mac or Linux?'],
-  a5: ['目前只有 Windows 64 位元版本。', '目前只有 Windows 64 位版本。', 'Only Windows 64-bit for now.'],
+  q1: ['伺服器無法加入，怎麼辦？', '服务器无法加入，怎么办？', 'I can\'t join the server. What now?'],
+  a1: ['請檢查遊戲版本是否為最新測試版，本模組包專屬伺服器以官方最新發布的測試版本為主。',
+    '请检查游戏版本是否为最新测试版，本整合包专属服务器以官方最新发布的测试版本为主。',
+    'Check that you are on the latest test build. The pack\'s own server always runs the newest official test release.'],
+  q2: ['這是 Minecraft 模組包嗎？', '这是 Minecraft 整合包吗？', 'Is this a Minecraft modpack?'],
+  a2: ['是，這是 Minecraft 的 Fabric 模組包，遊戲版本為 1.21.1。', '是的，这是 Minecraft 的 Fabric 整合包，游戏版本为 1.21.1。', 'Yes. It is a Fabric modpack for Minecraft 1.21.1.'],
+  q3: ['需要正式版 Minecraft 嗎？', '需要正版 Minecraft 吗？', 'Do I need to own Minecraft?'],
+  a3: ['是，需要正式版本的 Minecraft 帳號才可以進行連線與開啟遊玩。', '是的，需要正版 Minecraft 账号才能联机和开始游戏。', 'Yes. You need an account that owns Minecraft to play and to join the server.'],
+  q4: ['可以單人遊玩嗎？', '可以单人游玩吗？', 'Can I play solo?'],
+  a4: ['可以。我們的模組包以多人社群功能為主，但也能用單人離線模式遊玩。', '可以。我们的整合包以多人社区功能为主，但也能用单人离线模式游玩。',
+    'Yes. The pack is built around multiplayer and community, but you can also play it in single-player.'],
+  q5: ['可以在哪裡進行反饋？', '可以在哪里反馈？', 'Where can I give feedback?'],
+  a5: ['你可以前往<a href="{fb}">意見回饋表單</a>進行問題反饋，也可以加入我們專屬的 <a href="{dc}">Discord 群</a>進行意見回饋。',
+    '你可以前往<a href="{fb}">意见反馈表单</a>反馈问题，也可以加入我们专属的 <a href="{dc}">Discord 群</a>提出意见。',
+    'Report a problem on the <a href="{fb}">feedback form</a>, or join our <a href="{dc}">Discord</a> to share your thoughts.'],
   discord: ['Discord 社群', 'Discord 社区', 'Discord'],
   lore: ['設定集', '设定集', 'Lore book'],
   feedback: ['意見回饋', '意见反馈', 'Feedback'],
@@ -98,7 +102,7 @@ const S = {
 };
 
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const fill = s => s.replace('{mc}', LINKS.mcLauncher).replace('{cf}', LINKS.curseforge);
+const fill = s => s.replace('{mc}', LINKS.mcLauncher).replace('{cf}', LINKS.curseforge).replace('{fb}', LINKS.feedback).replace('{dc}', LINKS.discord);
 
 function page(L, i) {
   const t = k => fill(S[k][i]);
@@ -106,7 +110,7 @@ function page(L, i) {
   const A = `${up}assets/`;
   const url = SITE + L.dir;
   // Headings get a serif CJK face; Google Fonts' text= subset keeps it to the few glyphs actually used.
-  const heads = ['stepsH', 'whyH', 'faqH', 's1h', 's2h', 's3h', 'f1h', 'f2h', 'f3h', 'f4h'].map(k => S[k][i]).join('');
+  const heads = ['introH', 'featH', 'faqH', 'i1h', 'i2h', 'i3h', 'f1h', 'f2h', 'f3h', 'f4h'].map(k => S[k][i]).join('');
   const serifCss = L.serif ? `https://fonts.googleapis.com/css2?family=${L.serif.replace(/ /g, '+')}:wght@700&display=swap&text=${encodeURIComponent([...new Set(heads)].join(''))}` : null;
   const ld = {
     '@context': 'https://schema.org', '@type': 'SoftwareApplication',
@@ -163,18 +167,16 @@ ${serifCss ? `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigi
 </header>
 
 <main>
-  <section class="steps" aria-labelledby="steps-h">
-    <h2 id="steps-h">${t('stepsH')}</h2>
+  <section class="intro" aria-labelledby="intro-h">
+    <h2 id="intro-h">${t('introH')}</h2>
     <ol>
-      <li><h3>${t('s1h')}</h3><p>${t('s1')}</p></li>
-      <li><h3>${t('s2h')}</h3><p>${t('s2')}</p></li>
-      <li><h3>${t('s3h')}</h3><p>${t('s3')}</p></li>
+      ${[1, 2, 3].map(n => `<li><h3>${t(`i${n}h`)}</h3><p>${t(`i${n}`)}</p></li>`).join('\n      ')}
     </ol>
-    <p class="server">${t('server')}</p>
+    <p class="outro">${t('outro')}</p>
   </section>
 
   <section class="why" aria-labelledby="why-h">
-    <h2 id="why-h">${t('whyH')}</h2>
+    <h2 id="why-h">${t('featH')}</h2>
     <div class="grid">
       ${[1, 2, 3, 4].map(n => `<div><h3>${t(`f${n}h`)}</h3><p>${t(`f${n}`)}</p></div>`).join('\n      ')}
     </div>

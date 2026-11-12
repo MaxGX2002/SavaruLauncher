@@ -72,12 +72,11 @@ h2::after {
 h3 { margin: 0 0 6px; font: 700 19px/1.4 var(--head); }
 section p { margin: 0; color: var(--ink-2); }
 
-/* the steps are a real sequence: Roman numerals, like the IV in the logo */
-.steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; counter-reset: step; }
-.steps li { counter-increment: step; }
-.steps li::before { content: counter(step, upper-roman); display: block; margin-bottom: 8px; font: 700 44px/1 "Cinzel", Georgia, serif; color: var(--crimson); }
-.server { margin-top: 44px !important; padding: 16px 0; border-block: 1px solid var(--line); text-align: center; }
-.server b { color: var(--crimson); font-family: "Cinzel", Georgia, serif; letter-spacing: 0.06em; }
+/* the three pillars, numbered like the IV in the logo */
+.intro ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; counter-reset: step; }
+.intro li { counter-increment: step; }
+.intro li::before { content: counter(step, upper-roman); display: block; margin-bottom: 8px; font: 700 44px/1 "Cinzel", Georgia, serif; color: var(--crimson); }
+.outro { margin-top: 44px !important; padding: 16px 0; border-block: 1px solid var(--line); text-align: center; }
 
 .why .grid { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--line); }
 .why .grid > div { padding: 26px 0; border-bottom: 1px solid var(--line); }
@@ -109,8 +108,8 @@ footer .links a:hover { color: var(--ember); }
   .hero .page { padding: 56px 16px 36px; }
   .langs { right: 16px; }
   main > section:not(.shots) { padding-inline: 16px; }
-  .steps ol, .why .grid { grid-template-columns: 1fr; }
-  .steps ol { gap: 28px; }
+  .intro ol, .why .grid { grid-template-columns: 1fr; }
+  .intro ol { gap: 28px; }
   .why .grid > div:nth-child(n) { padding: 22px 0; border-left: 0; }
   .shots { grid-template-columns: repeat(2, 1fr); }
   .download { padding-inline: 32px; }

@@ -40,6 +40,7 @@ npm run feed -- v3.0_b1112 <CurseForge 檔案 ID>
 3. `npm run dist` → 產生 `dist/SavaruLauncher-<版本>-win64.zip`，最後一行印出 `download` 的 sha1 和大小。
 4. 把版本和 `download`（release 上 zip 的網址、sha1、大小）寫進 `feed/launcher-release.json`，建立 GitHub release `v<版本>` 並上傳 zip，
    再把 `launcher-release.json` 的內容放進 `feed/launcher.json` 的 `launcher` 欄位並 push。舊版啟動器會看到「有新版本」，0.5.0 以後的會自動更新。
+5. `node tools/build-site.js` 重建官網並 push（官網的下載按鈕本來就會讀 feed 顯示最新版，這步是讓網頁原始碼和 Google 看到的版本也一致）。
 
 ## 開發測試（離線帳號，只用於本機測試）
 
