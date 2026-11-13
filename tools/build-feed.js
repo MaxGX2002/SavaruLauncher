@@ -18,7 +18,7 @@ if (!version || !fileIdArg) { console.error('usage: build-feed.js <version> <cur
 const fileId = Number(fileIdArg);
 const PB = opt('--pack-build', 'D:/minecraft/_tools/pack-build');
 const INST = opt('--instance', 'D:/minecraft/Instances/TESTSAVARUIV');
-const MAIN = 'D:/minecraft/Instances/Savaru IV - Kohtalon Mies';
+const MAIN = opt('--main', 'D:/minecraft/Instances/Savaru IV - Kohtalon Mies'); // a folder holding minecraftinstance.json
 const ZIP = opt('--zip', `C:/Users/User/Downloads/Savaru IV - Kohtalon Mies-${version}.zip`);
 const CHANGELOG = opt('--changelog', `D:/minecraft/_tools/pack-changelog-${version}.md`);
 const OUT = opt('--out', path.join(__dirname, '..', 'feed', 'launcher.json'));
