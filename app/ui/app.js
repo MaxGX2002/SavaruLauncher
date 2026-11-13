@@ -95,9 +95,11 @@ function render(v) {
   $('#hide-on-launch').checked = v.settings.hideOnLaunch;
   $$('input[name="launcher"]').forEach(r => { r.checked = r.value === v.settings.launcher; });
   $('#ui-sound').checked = v.settings.uiSound;
+  $('#auto-update').checked = v.settings.autoUpdate;
   if (v.account && !$('#c-name').value) $('#c-name').value = v.account.name;
 
   selfUpdate(v.selfUpdate);
+  renderMods();
 
   if (!phase && !running) idleStatus();
   setButtons();
@@ -153,6 +155,21 @@ function renderNews(news) {
     : `<p>${t('目前沒有更新日誌。')}</p>`;
 }
 
+/* ---------- our own mods (mods.js), each with the version the pack carries ---------- */
+let modsKey = '';
+function renderMods() {
+  const jars = V?.mods || [], key = LANG + '|' + jars.join();
+  if (key === modsKey) return; // re-rendering would replay the cards' rise animation on every settings change
+  modsKey = key;
+  const lang = Math.max(0, ['zh-Hant', 'zh-Hans', 'en'].indexOf(LANG));
+  $('#mod-grid').innerHTML = MODS.map(m => {
+    const jar = jars.find(j => j.startsWith(m.jar)), ver = jar ? jar.slice(m.jar.length).replace(/\.jar$/, '') : '';
+    return `<button type="button" class="link-card mod" data-link="https://www.curseforge.com/minecraft/mc-mods/${m.id}"><b>${esc(m.name)}</b>${ver ? `<em>${esc(ver)}</em>` : ''}<span>${esc(m.d[lang])}</span></button>`;
+  }).join('');
+  $$('.link-card.mod').forEach((b, i) => b.style.setProperty('--i', i));
+}
+$('#mod-grid').addEventListener('click', e => { const b = e.target.closest('[data-link]'); if (b) api.call('link', b.dataset.link); });
+
 /* ---------- navigation ---------- */
 function go(view) {
   for (const b of $$('.nav button')) {
@@ -161,7 +178,7 @@ function go(view) {
   const cur = $(`.nav button[data-view="${view}"]`), mark = $('.nav-mark');
   mark.style.height = cur.offsetHeight + 'px';
   mark.style.transform = `translateY(${cur.offsetTop}px)`;
-  for (const id of ['home', 'gallery', 'community', 'notes', 'settings']) $('#view-' + id).hidden = id !== view;
+  for (const id of ['home', 'gallery', 'mods', 'community', 'notes', 'settings']) $('#view-' + id).hidden = id !== view;
   if (view !== 'gallery') $('#reel').pause();
   clearInterval(commentTimer);
   if (view === 'community') { loadComments(); commentTimer = setInterval(() => { if (!document.hidden) loadComments(); }, 20000); }
@@ -436,6 +453,13 @@ api.on('game', g => {
   setButtons();
   selfUpdate(V?.selfUpdate);
 });
+// Background pack update (setting): its progress shows like Play's; at the end the page takes the new state.
+api.on('auto-update', r => {
+  phase = null;
+  render(r.view);
+  if (r.ok) toast(t('已自動更新到 {v}', { v: r.view.installed }));
+  else if (r.error !== 'busy') failed(new Error(r.error));
+});
 api.on('self-update', s => { if (V) V.selfUpdate = s; selfUpdate(s); });
 
 /* ---------- login ---------- */
@@ -478,6 +502,7 @@ $('#mem').addEventListener('change', async e => render(await api.call('settings'
 $('#hide-on-launch').addEventListener('change', async e => render(await api.call('settings', { hideOnLaunch: e.target.checked })));
 $$('input[name="launcher"]').forEach(r => r.addEventListener('change', async e => render(await api.call('settings', { launcher: e.target.value }))));
 $('#ui-sound').addEventListener('change', async e => render(await api.call('settings', { uiSound: e.target.checked })));
+$('#auto-update').addEventListener('change', async e => render(await api.call('settings', { autoUpdate: e.target.checked })));
 $$('[data-open]').forEach(b => b.addEventListener('click', () => api.call('open', b.dataset.open)));
 $$('[data-win]').forEach(b => b.addEventListener('click', () => api.call('win', b.dataset.win)));
 $('#launcher-update-get').addEventListener('click', () => V.launcherUpdate?.url && api.call('link', V.launcherUpdate.url));

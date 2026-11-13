@@ -20,6 +20,7 @@
     <span class="nav-mark" aria-hidden="true"></span>
     <button type="button" data-view="home" aria-current="page"><span>首頁</span></button>
     <button type="button" data-view="gallery"><span>遊戲畫面</span></button>
+    <button type="button" data-view="mods"><span>自製模組</span></button>
     <button type="button" data-view="community"><span>社群</span></button>
     <button type="button" data-view="notes"><span>更新日誌</span><em id="nav-version"></em></button>
     <button type="button" data-view="settings"><span>設定</span></button>
@@ -71,6 +72,14 @@
     </div>
   </section>
 
+  <section class="view sheet" id="view-mods" hidden>
+    <h2>我們的專屬自製模組</h2>
+    <div class="sheet-body mods">
+      <p class="hint mods-lead">Savaru IV 團隊親手打造、收錄在模組包裡的模組。點一下開啟 CurseForge 頁面。</p>
+      <div class="mod-grid" id="mod-grid" data-no-t></div>
+    </div>
+  </section>
+
   <section class="view sheet" id="view-community" hidden>
     <h2>社群</h2>
     <div class="sheet-body community">
@@ -114,6 +123,11 @@
         <label class="check"><input type="radio" name="launcher" value="official"><span>使用官方 Minecraft 啟動器</span></label>
         <label class="check"><input type="radio" name="launcher" value="direct"><span>使用 Savaru 啟動器直接啟動（跳過官方啟動器）</span></label>
         <p class="hint">目前統一先以官方啟動器為主：在官方啟動器登入後，選「Savaru IV - Kohtalon Mies」按「遊玩」。直接啟動需要在這裡登入 Microsoft，等 Mojang 審核通過後才能使用。</p>
+      </section>
+      <section>
+        <h3>更新</h3>
+        <label class="check"><input type="checkbox" id="auto-update"><span>自動更新遊戲</span></label>
+        <p class="hint">偵測到模組包新版本時，在背景自動下載安裝；遊戲執行中會等關閉後再更新。</p>
       </section>
       <section>
         <h3>啟動</h3>
@@ -179,6 +193,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="i18n.js"></script>
+<script src="mods.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

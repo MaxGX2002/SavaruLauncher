@@ -41,7 +41,7 @@ function systemLang() {
 }
 function settings() {
   // launcher: 'official' = hand off to the official Minecraft Launcher (default), 'direct' = our own Microsoft sign-in.
-  const def = { memoryMb: totalMemMb >= 15000 ? 8192 : totalMemMb >= 11000 ? 6144 : 4096, hideOnLaunch: true, uiSound: true, launcher: 'official', lang: systemLang() };
+  const def = { memoryMb: totalMemMb >= 15000 ? 8192 : totalMemMb >= 11000 ? 6144 : 4096, hideOnLaunch: true, uiSound: true, autoUpdate: true, launcher: 'official', lang: systemLang() };
   return { ...def, ...readJson(F.settings, {}) };
 }
 
@@ -149,6 +149,7 @@ function view() {
     loginConfigured: !!CLIENT_ID || !!DEV_OFFLINE,
     settings: settings(), totalMemMb,
     launcherVersion: app.getVersion(),
+    mods: feed ? feed.files.filter(f => f.path.startsWith('mods/')).map(f => f.path.slice(5)) : [],
     launcherUpdate: feed?.launcher?.version && newer(feed.launcher.version, app.getVersion()) ? feed.launcher : null,
     selfUpdate,
     running: !!gameProc,
@@ -177,6 +178,28 @@ async function ensureInstalled(repair) {
   await loadFeed();
   if (!feed) throw new Error('no_feed');
   await game.install(BASE, feed, { repair, onProgress: p => send('progress', p) });
+}
+
+// The game holds logs/latest.log open while it runs (from either launcher), and Windows refuses to rename an
+// open file, so this also sees a game the official launcher started. Mod jars must not change under it.
+function gameRunning() {
+  if (gameProc) return true;
+  const log = path.join(game.layout(BASE).game, 'logs', 'latest.log');
+  try { fs.renameSync(log, log + '.chk'); fs.renameSync(log + '.chk', log); return false; } catch (e) { return e.code !== 'ENOENT'; }
+}
+
+// Auto-update (setting, on by default): once the pack is installed, a newer pack version is fetched in the
+// background at start and every 10 minutes, unless the game is running or another task is busy.
+// ponytail: a first install still waits for Play, it is several GB.
+async function autoUpdate() {
+  if (!settings().autoUpdate || busy || gameRunning()) return;
+  await loadFeed();
+  const inst = game.isInstalled(BASE, feed);
+  if (!feedOnline || !inst.version || inst.upToDate || busy || gameRunning()) return;
+  try {
+    await exclusive(() => ensureInstalled(false));
+    send('auto-update', { ok: true, view: view() });
+  } catch (e) { send('auto-update', { ok: false, error: e.message, view: view() }); }
 }
 
 const handlers = {
@@ -224,9 +247,10 @@ const handlers = {
   logout: () => { saveAccount(null); return view(); },
   settings: s => {
     const cur = settings();
-    const next = { memoryMb: Math.max(2048, Math.min(Number(s.memoryMb) || cur.memoryMb, totalMemMb - 1024)), hideOnLaunch: s.hideOnLaunch ?? cur.hideOnLaunch, uiSound: s.uiSound ?? cur.uiSound,
+    const next = { memoryMb: Math.max(2048, Math.min(Number(s.memoryMb) || cur.memoryMb, totalMemMb - 1024)), hideOnLaunch: s.hideOnLaunch ?? cur.hideOnLaunch, uiSound: s.uiSound ?? cur.uiSound, autoUpdate: s.autoUpdate ?? cur.autoUpdate,
       launcher: ['official', 'direct'].includes(s.launcher) ? s.launcher : cur.launcher, lang: LANGS.includes(s.lang) ? s.lang : cur.lang };
     writeJson(F.settings, next);
+    if (next.autoUpdate && !cur.autoUpdate) setTimeout(autoUpdate, 500);
     return view();
   },
   ping: async () => { if (!feed?.server) return null; try { return await ping(feed.server.address); } catch { return null; } },
@@ -286,5 +310,7 @@ app.whenReady().then(() => {
   win.webContents.setWindowOpenHandler(({ url }) => { handlers.link(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', e => e.preventDefault());
   win.loadFile(path.join(__dirname, 'ui', 'index.html'));
+  setTimeout(autoUpdate, 10000);
+  setInterval(autoUpdate, 10 * 60 * 1000);
 });
 app.on('window-all-closed', () => app.quit());

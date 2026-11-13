@@ -131,6 +131,15 @@ const ROWS = [
   ['留言送出失敗，請稍後再試。', '留言发送失败，请稍后再试。', 'The comment could not be sent. Try again later.'],
   ['留言板還沒開放。', '留言板还没开放。', 'Comments are not open yet.'],
   ['發生錯誤：', '发生错误：', 'Error: '],
+  // our own mods page
+  ['自製模組', '自制模组', 'Our Mods'],
+  ['我們的專屬自製模組', '我们的专属自制模组', 'Our Own Mods'],
+  ['Savaru IV 團隊親手打造、收錄在模組包裡的模組。點一下開啟 CurseForge 頁面。', 'Savaru IV 团队亲手打造、收录在整合包里的模组。点一下打开 CurseForge 页面。', 'Mods the Savaru IV team made for this pack. Click one to open its CurseForge page.'],
+  // auto-update
+  ['更新', '更新', 'Updates'],
+  ['自動更新遊戲', '自动更新游戏', 'Update the game automatically'],
+  ['偵測到模組包新版本時，在背景自動下載安裝；遊戲執行中會等關閉後再更新。', '检测到整合包新版本时，在后台自动下载安装；游戏运行中会等关闭后再更新。', 'When a new pack version comes out, it downloads and installs in the background; a running game is updated after it closes.'],
+  ['已自動更新到 {v}', '已自动更新到 {v}', 'Updated to {v} automatically'],
 ];
 const DICT = { 'zh-Hans': {}, en: {} };
 for (const [k, hans, en] of ROWS) { DICT['zh-Hans'][k] = hans; DICT.en[k] = en; }
