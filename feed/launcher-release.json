@@ -1,10 +1,10 @@
 {
-  "version": "0.6.0",
+  "version": "0.6.1",
   "url": "https://github.com/MaxGX2002/SavaruLauncher/releases/latest",
   "download": {
-    "url": "https://github.com/MaxGX2002/SavaruLauncher/releases/download/v0.6.0/SavaruLauncher-0.6.0-win64.zip",
-    "sha1": "22262169224292c9e4e93d1f36834cd69720c8ce",
-    "size": 208071474
+    "url": "https://github.com/MaxGX2002/SavaruLauncher/releases/download/v0.6.1/SavaruLauncher-0.6.1-win64.zip",
+    "sha1": "ea0cb6a5716dbead445866a6224f9c1bf8b4d2bd",
+    "size": 208472561
   },
   "comments": {
     "read": "https://docs.google.com/spreadsheets/d/1Fjxg5RM6XNIVARUZN8r3EmFxF-zgXFwymzGABihWdzE/gviz/tq?tqx=out:json&headers=1&gid=1829927269&tq=select%20A%2CB%20order%20by%20A%20desc%20limit%2060",
