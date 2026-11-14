@@ -128,6 +128,7 @@ function page(L, i) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(S.title[i])}</title>
 <meta name="description" content="${esc(S.desc[i])}">
+<meta name="google-site-verification" content="jxtf8wL-x5tvN5fIuchIhGE_VkRJ3pmAmPh6tk1RWBs">
 <link rel="canonical" href="${url}">
 ${LANGS.map(o => `<link rel="alternate" hreflang="${o.code}" href="${SITE + o.dir}">`).join('\n')}
 <link rel="alternate" hreflang="x-default" href="${SITE}">
