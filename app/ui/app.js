@@ -151,7 +151,7 @@ function md(src) {
 }
 function renderNews(news) {
   $('#news').innerHTML = news.length
-    ? news.map(n => `<div class="entry"><p class="date">${esc(n.date || '')}</p>${md(n.markdown || '')}</div>`).join('')
+    ? news.map(n => `<div class="entry"><p class="date">${esc(n.date || '')}</p>${md(n.i18n?.[LANG] || n.markdown || '')}</div>`).join('')
     : `<p>${t('目前沒有更新日誌。')}</p>`;
 }
 

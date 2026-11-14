@@ -1,7 +1,7 @@
 {
   "name": "savaru-launcher",
   "productName": "Savaru IV Launcher",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Savaru IV - Kohtalon Mies launcher",
   "main": "app/main.js",
   "private": true,

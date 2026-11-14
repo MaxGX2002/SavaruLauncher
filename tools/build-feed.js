@@ -119,7 +119,7 @@ async function probe(url) {
     pack: { version, fileId, zip },
     recommendedMemoryMb: 8192,
     server: { name: 'SAVARU', address: 'china-sensors.gl.joinmc.link' },
-    news: fs.existsSync(CHANGELOG) ? [{ title: version, date: new Date().toISOString().slice(0, 10), markdown: fs.readFileSync(CHANGELOG, 'utf8') }] : [],
+    news: require('./news').news(version, CHANGELOG),
     launcher: JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'feed', 'launcher-release.json'), 'utf8')),
     files: out,
   };
