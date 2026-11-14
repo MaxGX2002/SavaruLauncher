@@ -28,7 +28,7 @@ fs.writeFileSync(ico, Buffer.concat([head, png]));
     platform: 'win32', arch: 'x64',
     name: pkg.productName, executableName: 'SavaruLauncher', appVersion: pkg.version, icon: ico,
     win32metadata: { CompanyName: 'Savaru', FileDescription: pkg.productName, ProductName: pkg.productName, InternalName: 'SavaruLauncher' },
-    ignore: [/^\/(feed|tools|dist|build)(\/|$)/, /^\/\.git/],
+    ignore: [/^\/(feed|tools|dist|build|docs)(\/|$)/, /^\/\.git/],
     prune: true,
   });
   const zip = path.join(path.dirname(out), `SavaruLauncher-${pkg.version}-win64.zip`);

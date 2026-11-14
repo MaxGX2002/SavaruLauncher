@@ -78,6 +78,7 @@ const S = {
   f4: ['擁有角色存檔功能，讓你橫跨不同世界打造同一隻專屬角色。', '拥有角色存档功能，让你横跨不同世界打造同一个专属角色。',
     'Save your character and build the same one across different worlds.'],
   shot: ['Savaru IV 遊戲畫面', 'Savaru IV 游戏画面', 'Savaru IV gameplay'],
+  clips: ['Savaru IV 戰鬥片段', 'Savaru IV 战斗片段', 'Savaru IV combat clips'],
   faqH: ['常見問題', '常见问题', 'Questions'],
   q1: ['伺服器無法加入，怎麼辦？', '服务器无法加入，怎么办？', 'I can\'t join the server. What now?'],
   a1: ['請檢查遊戲版本是否為最新測試版，本模組包專屬伺服器以官方最新發布的測試版本為主。',
@@ -184,6 +185,10 @@ ${serifCss ? `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigi
 
   <section class="shots" aria-label="${t('shot')}">
     ${shots.map(([s, pos]) => `<img src="${A}shots/${s}.jpg" alt="${t('shot')}" style="object-position: ${pos}" loading="lazy" decoding="async">`).join('\n    ')}
+  </section>
+
+  <section class="clips" aria-label="${t('clips')}">
+    ${[1, 2, 3, 4].map(n => `<video autoplay muted loop playsinline preload="metadata" poster="${A}clips/combat-${n}.jpg"><source src="${A}clips/combat-${n}.mp4" type="video/mp4"></video>`).join('\n    ')}
   </section>
 
   <section class="faq" aria-labelledby="faq-h">

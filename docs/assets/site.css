@@ -62,7 +62,7 @@ h1 { margin: 0; }
 .reel video { width: 100%; height: 100%; object-fit: cover; }
 
 /* ---------- sections ---------- */
-main > section:not(.shots) { max-width: 1040px; margin: 0 auto; padding: clamp(56px, 8vw, 88px) 24px; }
+main > section:not(.shots):not(.clips) { max-width: 1040px; margin: 0 auto; padding: clamp(56px, 8vw, 88px) 24px; }
 main > section.why { padding-top: 0; }
 h2 { margin: 0 0 40px; text-align: center; font: 700 clamp(25px, 3.2vw, 33px)/1.3 var(--head); letter-spacing: 0.04em; text-wrap: balance; }
 h2::after {
@@ -85,6 +85,8 @@ section p { margin: 0; color: var(--ink-2); }
 
 .shots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; background: var(--night); }
 .shots img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.clips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 0 4px 4px; background: var(--night); }
+.clips video { display: block; width: 100%; aspect-ratio: 960 / 402; object-fit: cover; }
 
 .faq { max-width: 760px !important; }
 .faq details { border-bottom: 1px solid var(--line); }
@@ -107,15 +109,16 @@ footer .links a:hover { color: var(--ember); }
 @media (max-width: 760px) {
   .hero .page { padding: 56px 16px 36px; }
   .langs { right: 16px; }
-  main > section:not(.shots) { padding-inline: 16px; }
+  main > section:not(.shots):not(.clips) { padding-inline: 16px; }
   .intro ol, .why .grid { grid-template-columns: 1fr; }
   .intro ol { gap: 28px; }
   .why .grid > div:nth-child(n) { padding: 22px 0; border-left: 0; }
   .shots { grid-template-columns: repeat(2, 1fr); }
+  .clips { grid-template-columns: 1fr; }
   .download { padding-inline: 32px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
-  .reel video { display: none; }
+  .reel video, .clips { display: none; }
 }

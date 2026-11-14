@@ -38,6 +38,7 @@ const ROWS = [
   ['背景 {n}', '背景 {n}', 'Background {n}'],
   // gallery, community, changelog
   ['實機精華影片・3 分鐘', '实机精华视频・3 分钟', 'Gameplay highlights · 3 min'],
+  ['戰鬥片段', '战斗片段', 'Combat clips'],
   ['遊戲截圖 {n}', '游戏截图 {n}', 'Screenshot {n}'],
   ['上一張', '上一张', 'Previous'],
   ['下一張', '下一张', 'Next'],

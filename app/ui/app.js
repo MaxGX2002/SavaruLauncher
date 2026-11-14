@@ -180,6 +180,9 @@ function go(view) {
   mark.style.transform = `translateY(${cur.offsetTop}px)`;
   for (const id of ['home', 'gallery', 'mods', 'community', 'notes', 'settings']) $('#view-' + id).hidden = id !== view;
   if (view !== 'gallery') $('#reel').pause();
+  // HUD-less combat clips loop silently while the gallery is open (posters only under reduced motion).
+  const loop = view === 'gallery' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  for (const v of $$('#clips video')) loop ? v.play().catch(() => {}) : v.pause();
   clearInterval(commentTimer);
   if (view === 'community') { loadComments(); commentTimer = setInterval(() => { if (!document.hidden) loadComments(); }, 20000); }
 }
