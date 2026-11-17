@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "generated": "2026-11-17T11:25:45.101Z",
+  "generated": "2026-11-17T12:32:12.686Z",
   "minecraft": "1.21.1",
   "loader": "0.19.5",
   "pack": {
     "version": "v3.0_b1117b",
-    "fileId": 0,
+    "fileId": 9665550,
     "zip": {
       "url": "https://github.com/MaxGX2002/SavaruLauncher/releases/download/pack-v3.0_b1117b/Savaru-IV-v3.0_b1117b.zip",
       "sha1": "a1f43b741c1ec770957dd18674257a93488d5bec",
